@@ -246,7 +246,11 @@ class DSFullBus
      */
     double getBusVolFrequency(void); //renke add
 	
+	void setBusVolFrequencyFlag(bool flag); //renke add
+	
 	void printbusvoltage (void); //renke add
+	
+	void setWideAreaFreqforPSS(double freq); //renke hard coded;
 	
 	
 	/**
@@ -695,7 +699,7 @@ typedef network::BaseNetwork<DSFullBus, DSFullBranch > DSFullNetwork;
 }     // dynamic_simulation
 }     // gridpack
 
-BOOST_CLASS_EXPORT_KEY(gridpack::dynamic_simulation::DSFullBus);
-BOOST_CLASS_EXPORT_KEY(gridpack::dynamic_simulation::DSFullBranch);
+BOOST_CLASS_EXPORT_KEY(gridpack::dynamic_simulation::DSFullBus)
+BOOST_CLASS_EXPORT_KEY(gridpack::dynamic_simulation::DSFullBranch)
 
 #endif
