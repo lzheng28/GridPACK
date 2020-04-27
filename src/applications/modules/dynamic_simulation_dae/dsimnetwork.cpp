@@ -46,6 +46,7 @@ DSimBus::DSimBus(void)
   p_neqsexc= NULL;
   p_neqsgov= NULL;
   p_gen     = NULL;
+  p_set_jacobian = false;
 }
 
 /**
@@ -698,6 +699,75 @@ bool DSimBus::serialWrite(char *string,
     const int bufsize, const char *signal)
 {
   return false;
+}
+
+/**
+ * Functions for building the Jacobian used by the DAE solver
+ */
+void setJacobianData()
+{
+  if (p_set_jacobian) return;
+  p_genoffset.clear()
+  p_excoffset.clear()
+  p_govoffset.clear()
+  int ntot;
+  p_num_var = 2;
+  if (p_ngen > 0) {
+    int i;
+    int genoffset = 2;
+    int ngen;
+    int nexc;
+    int ngov;
+    int delta;
+    for (i=0; i<p_ngen; i++) {
+      BaseGenModel *gen = p_gen[i];
+      ngen = gen->getNumGeneratorVariables();
+      delta = ngen;
+      if (gen->getphasExciter()) {
+        nexc = gen->getExciter()->getNumExciterVariables();
+        delta += nexc;
+      } else {
+        nexc = -1;
+      }
+      if (gen->getphasGovernor()) {
+        ngov = gen->getGovernor()->getNumGovernorVariables();
+        delta += ngov;
+      } else {
+        ngov = -1;
+      }
+      p_genoffset.push_back(genoffset);
+      if (nexc > 0) {
+        p_excoffset.push_back(genoffset + ngen);
+      } else {
+        p_excoffset.push_back(nexc);
+        nexc = 0;
+      }
+      if (ngov > 0) {
+        p_govoffset.push_back(genoffset + nexc + ngov);
+      } else {
+        p_govoffset.push_back(ngov);
+      }
+      genoffset += delta;
+    } 
+    p_num_var = genoffset;
+  }
+  p_set_jacobian = true;
+}
+
+/**
+ * return the number of matrix rows owned by this bus
+ * @return total number of equations owned by this bus
+ */
+int matrixNumRows()
+{
+}
+
+/**
+ * return the number of matrix columns owned by this bus
+ * @return total number of variables owned by this bus
+ */
+int matrixNumCols()
+{
 }
 
 /**

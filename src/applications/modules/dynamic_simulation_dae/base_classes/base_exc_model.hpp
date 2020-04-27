@@ -159,6 +159,30 @@ to be overwritten by the implementation */
 
   BaseGenModel* getGenerator();
 
+  /**
+   * Get the number of variables in the exciter
+   * @return number of variables
+   */
+  virtual int getNumExciterVariables();
+
+  /**
+   * Return non-zero values of Jacobian matrix for exciter. Indices are
+   * bounded by the number of variables.
+   * @param idx i indices of jacobian elements
+   * @param jdx j indices of jacobian elements
+   * @param values values of jacobian elements
+   */
+  virtual void getExciterJacobian(vector<int> &idx, vector<int> &jdx,
+      vector<double> &values);
+
+  /**
+   * Return gradient of E_df with respect to the exciter variables
+   * @param jdx indices of exciter variables
+   * @param gradEdf gradient of E_df
+   */
+  virtual void getGradientEdf(vector<int> &jdx, vector<double> &gradEdf);
+
+  /**
 protected:
   double        VD, VQ;
   int           status; /**< Exciter status */

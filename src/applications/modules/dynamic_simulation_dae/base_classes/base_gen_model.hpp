@@ -178,6 +178,40 @@ to be overwritten by the implementation */
   
   bool getphasGovernor();
 
+  /**
+   * Get the number of variables in the generator
+   * @return number of variables
+   */
+  virtual int getNumGeneratorVariables();
+
+  /**
+   * Return non-zero values of Jacobian matrix for generator. Indices are
+   * bounded by the number of generator variables.
+   * @param idx i indices of jacobian elements
+   * @param jdx j indices of jacobian elements
+   * @param values values of jacobian elements
+   */
+  virtual void getGeneratorJacobian(vector<int> &idx, vector<int> &jdx,
+      vector<double> &values);
+
+  /**
+   * get the coefficient of Efd from the generator equations and the indices
+   * of the equations in which Efd appears
+   * @param idx index of equation(s) containing Efd
+   * @param coefEfd coefficient of Efd in equation
+   * @return false if generator has no exciter and Efd is a constant
+   */
+  virtual bool getEfdCoefs(vector<int> &idx, vector<double> &coefEfd);
+
+  /**
+   * get the coefficent of Pmech from the generator equations and the indices of
+   * the equations in which Pmech appears
+   * @param idx index of equation(s) containing Pmech
+   * @param coefEfd coefficient of Pmech in equation
+   * @return false if generator has no governor and Pmech is a constant
+   */
+  virtual bool getPmechCoefs(vector<int> &idx, vector<double> &coefPmech);
+
  protected:
   double        pg; /**< Generator active power output */
   double        qg; /**< Generator reactive power output */

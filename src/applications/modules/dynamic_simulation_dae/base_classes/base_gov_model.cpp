@@ -164,3 +164,37 @@ BaseGenModel* BaseGovModel::getGenerator(void)
   return p_gen;
 }
  
+/**
+ * Get the number of variables in the governor
+ * @return number of variables
+ */
+int BaseGovModel::getNumGovernorVariables()
+{
+  return 0;
+}
+
+/**
+ * Return non-zero values of Jacobian matrix for governor. Indices are
+ * bounded by the number of governor values.
+ * @param idx i indices of jacobian elements
+ * @param jdx j indices of jacobian elements
+ * @param values values of jacobian elements
+ */
+void BaseGovModel::getGovernorJacobian(vector<int> &idx,
+    vector<int> &jdx, vector<double> &values)
+{
+  idx.clear();
+  jdx.clear();
+  values.clear();
+}
+
+/**
+ * Evaluate the gradient of Pmech with respect to the governor variables
+ * @param jdx index of governor variables
+ * @param values jacobian values (gradient of Pmech)
+ */
+void BaseGovModel::getGradientPmech(vector<int> &jdx, vector<double> &gradPmech)
+{
+  jdx.clear();
+  gradPmech.clear();
+}

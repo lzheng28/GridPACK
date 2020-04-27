@@ -150,6 +150,23 @@
 
     void setRank(int rank) { p_rank = rank; }
 
+    /**
+     * Functions for building the Jacobian used by the DAE solver
+     */
+    void setJacobianData();
+
+    /**
+     * return the number of matrix rows owned by this bus
+     * @return total number of equations owned by this bus
+     */
+    int matrixNumRows();
+
+    /**
+     * return the number of matrix columns owned by this bus
+     * @return total number of variables owned by this bus
+     */
+    int matrixNumCols();
+
   private:
     // Anything declared here should be set in the Archive class in exactly the same order!!
     // Data needed for calculations
@@ -180,6 +197,20 @@
     int           *p_neqsgov; // Number of requations for each governor 
     bool has_ex; 
     bool has_gv;
+
+    // Data structures used to create Jacobians for DAE solver
+
+    // offsets for variables and equations for each genenerator, exciter and governor.
+    // The length of the exciter and governor arrays are the same as the generator array,
+    // even if there is no exciter or governor. If the offset is -1 for the
+    // exciter or governor, that implies there is no exciter of governor
+    std::vector<int> p_genoffset;
+    std::vector<int> p_excoffset;
+    std::vector<int> p_govoffset;
+    int p_num_var;
+
+    // flag that signals if Jacobian data structures have been initialized
+    bool p_set_jacobian;
 
     friend class boost::serialization::access;
     
@@ -295,6 +326,7 @@
     bool isGhost(void) { return p_isghost; }
 
     void setRank(int rank) { p_rank = rank; }
+
   private:
     int p_nparlines; // Number of parallel lines
     std::vector<int> p_status; // Status of the lines

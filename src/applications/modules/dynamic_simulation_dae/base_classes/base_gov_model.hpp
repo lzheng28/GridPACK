@@ -159,6 +159,29 @@ to be overwritten by the implementation */
   void setGenerator(BaseGenModel* generator);
 
   BaseGenModel* getGenerator(void);
+
+  /**
+   * Get the number of variables in the governor
+   * @return number of variables
+   */
+  virtual int getNumGovernorVariables();
+
+  /**
+   * Return non-zero values of Jacobian matrix for governor. Indices are
+   * bounded by the number of governor values.
+   * @param idx i indices of jacobian elements
+   * @param jdx j indices of jacobian elements
+   * @param values values of jacobian elements
+   */
+  virtual void getGovernorJacobian(vector<int> &idx, vector<int> &jdx,
+      vector<double> &values);
+
+  /**
+   * Evaluate the gradient of Pmech with respect to the governor variables
+   * @param jdx index of governor variables
+   * @param gradPmech gradient of Pmech
+   */
+  virtual void getGradientPmech(vector<int> &jdx, vector<double> &gradPmech);
 protected:
   double        VD, VQ;
   int           status; /**< Machine status */
