@@ -167,6 +167,49 @@
      */
     int matrixNumCols();
 
+    /**
+     * assign the global row index to the local row index
+     * @param irow local row index
+     * @param grow global row index
+     */
+    void matrixSetRowIndex(int irow, int grow);
+
+    /**
+     * assign the global column index to the local column index
+     * @param icol local column index
+     * @param gcol global column index
+     */
+    void matrixSetColIndex(int icol, int gcol);
+
+    /**
+     * get the global index corresponding to the local index irow
+     * @param irow local row index
+     * @return global row index
+     */
+    int matrixGetRowIndex(int irow);
+
+    /**
+     * get the global index corresponding to the local index icol
+     * @param icol local column index
+     * @return global column index
+     */
+    int matrixGetColIndex(int icol);
+
+    /**
+     * return the number of matrix elements from this bus
+     * @return number of matrix elements
+     */
+    int matrixNumValues() const;
+
+    /**
+     * return the matrix element values and the global row and column indices
+     * for each matrix element
+     * @param values list of matrix element values
+     * @param rows row indices for each matrix element
+     * @param cols column indices for  each matrix element
+     */
+    void matrixGetValues(double *values, int *rows, int *cols);
+
   private:
     // Anything declared here should be set in the Archive class in exactly the same order!!
     // Data needed for calculations
@@ -183,7 +226,12 @@
     int    p_nvar;      // Number of variables for this bus
     
     // Variables
-    double *p_VDQptr; // Pointer used for exchanging values with ghost buses. Note that this pointer is pointed to the buffer used for exchanging values with ghost buses. Its contents should be updated whenever there is a change in V, e.g., when the values from vector X are being mapped to the buses.
+ 
+    // Pointer used for exchanging values with ghost buses. Note that this
+    // pointer is pointed to the buffer used for exchanging values with ghost buses. Its contents
+    // should be updated whenever there is a change in V, e.g., when the values from vector X are being
+    // mapped to the buses.
+    double *p_VDQptr;
 
     bool   p_isghost; // Is it a local or ghosted element
 
@@ -208,6 +256,13 @@
     std::vector<int> p_excoffset;
     std::vector<int> p_govoffset;
     int p_num_var;
+
+    // arrays that map local indices to global indices
+    std::vector<int> p_rowidx;
+    std::vector<int> p_colidx;
+
+    // total number of matrix values
+    int p_num_matrix_values;
 
     // flag that signals if Jacobian data structures have been initialized
     bool p_set_jacobian;

@@ -180,8 +180,8 @@ int BaseGovModel::getNumGovernorVariables()
  * @param jdx j indices of jacobian elements
  * @param values values of jacobian elements
  */
-void BaseGovModel::getGovernorJacobian(vector<int> &idx,
-    vector<int> &jdx, vector<double> &values)
+void BaseGovModel::getGovernorJacobian(std::vector<int> &idx,
+    std::vector<int> &jdx, std::vector<double> &values)
 {
   idx.clear();
   jdx.clear();
@@ -193,7 +193,8 @@ void BaseGovModel::getGovernorJacobian(vector<int> &idx,
  * @param jdx index of governor variables
  * @param values jacobian values (gradient of Pmech)
  */
-void BaseGovModel::getGradientPmech(vector<int> &jdx, vector<double> &gradPmech)
+void BaseGovModel::getGradientPmech(std::vector<int> &jdx,
+    std::vector<double> &gradPmech)
 {
   jdx.clear();
   gradPmech.clear();

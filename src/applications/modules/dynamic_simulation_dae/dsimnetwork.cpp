@@ -704,12 +704,12 @@ bool DSimBus::serialWrite(char *string,
 /**
  * Functions for building the Jacobian used by the DAE solver
  */
-void setJacobianData()
+void DSimBus::setJacobianData()
 {
   if (p_set_jacobian) return;
-  p_genoffset.clear()
-  p_excoffset.clear()
-  p_govoffset.clear()
+  p_genoffset.clear();
+  p_excoffset.clear();
+  p_govoffset.clear();
   int ntot;
   p_num_var = 2;
   if (p_ngen > 0) {
@@ -751,6 +751,8 @@ void setJacobianData()
     } 
     p_num_var = genoffset;
   }
+  p_rowidx.resize(p_num_var);
+  p_colidx.resize(p_num_var);
   p_set_jacobian = true;
 }
 
@@ -758,16 +760,169 @@ void setJacobianData()
  * return the number of matrix rows owned by this bus
  * @return total number of equations owned by this bus
  */
-int matrixNumRows()
+int DSimBus::matrixNumRows()
 {
+  return p_num_var;
 }
 
 /**
  * return the number of matrix columns owned by this bus
  * @return total number of variables owned by this bus
  */
-int matrixNumCols()
+int DSimBus::matrixNumCols()
 {
+  return p_num_var;
+}
+
+/**
+ * assign the global row index to the local row index
+ * @param irow local row index
+ * @param grow global row index
+ */
+void DSimBus::matrixSetRowIndex(int irow, int grow)
+{
+  p_rowidx[irow] = grow;
+}
+
+/**
+ * assign the global column index to the local column index
+ * @param icol local column index
+ * @param gcol global column index
+ */
+void DSimBus::matrixSetColIndex(int icol, int gcol)
+{
+  p_colidx[icol] = gcol;
+}
+
+/**
+ * get the global index corresponding to the local index irow
+ * @param irow local row index
+ * @return global row index
+ */
+int DSimBus::matrixGetRowIndex(int irow)
+{
+  return p_rowidx[irow];
+}
+
+/**
+ * get the global index corresponding to the local index icol
+ * @param icol local column index
+ * @return global column index
+ */
+int DSimBus::matrixGetColIndex(int icol)
+{
+  return p_rowidx[icol];
+}
+
+/**
+ * return the number of matrix elements from this bus
+ * @return number of matrix elements
+ */
+int DSimBus::matrixNumValues() const
+{
+  return p_num_matrix_values;
+}
+
+/**
+ * return the matrix element values and the global row and column indices
+ * for each matrix element
+ * @param values list of matrix element values
+ * @param rows row indices for each matrix element
+ * @param cols column indices for  each matrix element
+ */
+void DSimBus::matrixGetValues(double *values, int *rows, int *cols)
+{
+  int icnt = 0;
+  int i, j;
+  // Calculate matrix elements associated with voltage block
+  // TODO
+  int igen;
+  // loop over generators
+  for (igen = 0; igen<p_ngen; igen++) {
+    // get block representing couplings between generator variables
+    std::vector<int> idx, jdx;
+    std::vector<double> vals;
+    BaseGenModel *gen = p_gen[igen];
+    gen->getGeneratorJacobian(idx, jdx, vals);
+    int ioffset, joffset;
+    ioffset  = p_genoffset[igen];
+    joffset  = p_genoffset[igen];
+    int nvar = vals.size();
+    for (i=0; i<nvar; i++) {
+      values[icnt] = vals[i];
+      rows[icnt] = idx[i]+ioffset;
+      cols[icnt] = jdx[i]+joffset;
+      icnt++;
+    }
+    if (gen->getphasExciter()) {
+      // get block representing couplings between exciter variables
+      ioffset = p_excoffset[igen];
+      joffset = p_excoffset[igen];
+      boost::shared_ptr<BaseExcModel> exc = gen->getExciter();
+      exc->getExciterJacobian(idx, jdx, vals);
+      nvar = vals.size();
+      for (i=0; i<nvar; i++) {
+        values[icnt] = vals[i];
+        rows[icnt] = idx[i]+ioffset;
+        cols[icnt] = jdx[i]+joffset;
+        icnt++;
+      }
+      // get block representing couplings between generator and exciter
+      std::vector<int> efdRows;
+      std::vector<double> coefEfd;
+      if (gen->getEfdCoefs(efdRows, coefEfd)) {
+        std::vector<int> excCols;
+        std::vector<double> gradEfd;
+        ioffset = p_genoffset[igen];
+        joffset = p_excoffset[igen];
+        int nrows = efdRows.size();
+        exc->getGradientEfd(excCols, gradEfd);
+        int ncols = excCols.size();
+        for (i=0; i<nrows; i++) {
+          for (j=0; j<ncols; j++) {
+            values[icnt] = coefEfd[i]*gradEfd[j];
+            rows[icnt] = efdRows[i]+ioffset;
+            cols[icnt] = excCols[j]+joffset;
+            icnt++;
+          }
+        }
+      }
+    }
+    // get block representing couplings between governor variables
+    if (gen->getphasGovernor()) {
+      // get block representing couplings between governor variables
+      ioffset = p_govoffset[igen];
+      joffset = p_govoffset[igen];
+      boost::shared_ptr<BaseGovModel> gov = gen->getGovernor();
+      gov->getGovernorJacobian(idx, jdx, vals);
+      nvar = vals.size();
+      for (i=0; i<nvar; i++) {
+        values[icnt] = vals[i];
+        rows[icnt] = idx[i]+ioffset;
+        cols[icnt] = jdx[i]+joffset;
+        icnt++;
+      }
+      std::vector<int> pmcRows;
+      std::vector<double> coefPmc;
+      if (gen->getPmechCoefs(pmcRows, coefPmc)) {
+        std::vector<int> govCols;
+        std::vector<double> gradPmc;
+        ioffset = p_genoffset[igen];
+        joffset = p_govoffset[igen];
+        int nrows = pmcRows.size();
+        gov->getGradientPmech(govCols, gradPmc);
+        int ncols = govCols.size();
+        for (i=0; i<nrows; i++) {
+          for (j=0; j<ncols; j++) {
+            values[icnt] = coefPmc[i]*gradPmc[j];
+            rows[icnt] = pmcRows[i]+ioffset;
+            cols[icnt] = govCols[j]+joffset;
+            icnt++;
+          }
+        }
+      }
+    }
+  }
 }
 
 /**

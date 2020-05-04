@@ -191,7 +191,10 @@ bool BaseGenModel::getphasGovernor()
  * Get the number of variables in the generator
  * @return number of variables
  */
-int getNumGeneratorVariables();
+int BaseGenModel::getNumGeneratorVariables()
+{
+  return 0;
+}
 
 /**
  * Return non-zero values of Jacobian matrix for generator. Indices are
@@ -200,8 +203,8 @@ int getNumGeneratorVariables();
  * @param jdx j indices of jacobian elements
  * @param values values of jacobian elements
  */
-void getGeneratorJacobian(vector<int> &idx, vector<int> &jdx,
-    vector<double> &values)
+void BaseGenModel::getGeneratorJacobian(std::vector<int> &idx, std::vector<int> &jdx,
+    std::vector<double> &values)
 {
   idx.clear();
   jdx.clear();
@@ -215,7 +218,7 @@ void getGeneratorJacobian(vector<int> &idx, vector<int> &jdx,
  * @param coefEfd coefficient of Efd in equation
  * @return false if generator has no exciter and Efd is a constant
  */
-bool getEfdCoefs(vector<int> &idx, vector<double> &coefEfd)
+bool BaseGenModel::getEfdCoefs(std::vector<int> &idx, std::vector<double> &coefEfd)
 {
   idx.clear();
   coefEfd.clear();
@@ -229,7 +232,7 @@ bool getEfdCoefs(vector<int> &idx, vector<double> &coefEfd)
  * @param coefEfd coefficient of Pmech in equation
  * @return false if generator has no governor and Pmech is a constant
  */
-bool getPmechCoefs(vector<int> &idx, vector<double> &coefPmech)
+bool BaseGenModel::getPmechCoefs(std::vector<int> &idx, std::vector<double> &coefPmech)
 {
   idx.clear();
   coefPmech.clear();

@@ -161,7 +161,7 @@ BaseGenModel* BaseExcModel::getGenerator()
  * Get the number of variables in the exciter
  * @return number of variables
  */
-int getNumExciterVariables()
+int BaseExcModel::getNumExciterVariables()
 {
   return 0;
 }
@@ -173,8 +173,8 @@ int getNumExciterVariables()
  * @param jdx j indices of jacobian elements
  * @param values values of jacobian elements
  */
-void getExciterJacobian(vector<int> &idx, vector<int> &jdx,
-    vector<double> &values)
+void BaseExcModel::getExciterJacobian(std::vector<int> &idx,
+    std::vector<int> &jdx, std::vector<double> &values)
 {
   idx.clear();
   jdx.clear();
@@ -182,14 +182,15 @@ void getExciterJacobian(vector<int> &idx, vector<int> &jdx,
 }
 
 /**
- * Return gradient of E_df with respect to the exciter variables
+ * Return gradient of E_fd with respect to the exciter variables
  * * @param jdx indices of exciter variables
- * @param gradEdf gradient of E_df
+ * @param gradEfd gradient of E_fd
  */
-void getGradientEdf(vector<int> &jdx, vector<double> &gradEdf)
+void BaseExcModel::getGradientEfd(std::vector<int> &jdx,
+    std::vector<double> &gradEfd)
 {
   jdx.clear();
-  gradEdf.clear();
+  gradEfd.clear();
 }
 
 

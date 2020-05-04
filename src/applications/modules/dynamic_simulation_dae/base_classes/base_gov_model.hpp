@@ -173,15 +173,15 @@ to be overwritten by the implementation */
    * @param jdx j indices of jacobian elements
    * @param values values of jacobian elements
    */
-  virtual void getGovernorJacobian(vector<int> &idx, vector<int> &jdx,
-      vector<double> &values);
+  virtual void getGovernorJacobian(std::vector<int> &idx, std::vector<int> &jdx,
+      std::vector<double> &values);
 
   /**
    * Evaluate the gradient of Pmech with respect to the governor variables
    * @param jdx index of governor variables
    * @param gradPmech gradient of Pmech
    */
-  virtual void getGradientPmech(vector<int> &jdx, vector<double> &gradPmech);
+  virtual void getGradientPmech(std::vector<int> &jdx, std::vector<double> &gradPmech);
 protected:
   double        VD, VQ;
   int           status; /**< Machine status */

@@ -191,8 +191,8 @@ to be overwritten by the implementation */
    * @param jdx j indices of jacobian elements
    * @param values values of jacobian elements
    */
-  virtual void getGeneratorJacobian(vector<int> &idx, vector<int> &jdx,
-      vector<double> &values);
+  virtual void getGeneratorJacobian(std::vector<int> &idx, std::vector<int> &jdx,
+      std::vector<double> &values);
 
   /**
    * get the coefficient of Efd from the generator equations and the indices
@@ -201,7 +201,7 @@ to be overwritten by the implementation */
    * @param coefEfd coefficient of Efd in equation
    * @return false if generator has no exciter and Efd is a constant
    */
-  virtual bool getEfdCoefs(vector<int> &idx, vector<double> &coefEfd);
+  virtual bool getEfdCoefs(std::vector<int> &idx, std::vector<double> &coefEfd);
 
   /**
    * get the coefficent of Pmech from the generator equations and the indices of
@@ -210,7 +210,7 @@ to be overwritten by the implementation */
    * @param coefEfd coefficient of Pmech in equation
    * @return false if generator has no governor and Pmech is a constant
    */
-  virtual bool getPmechCoefs(vector<int> &idx, vector<double> &coefPmech);
+  virtual bool getPmechCoefs(std::vector<int> &idx, std::vector<double> &coefPmech);
 
  protected:
   double        pg; /**< Generator active power output */

@@ -172,17 +172,16 @@ to be overwritten by the implementation */
    * @param jdx j indices of jacobian elements
    * @param values values of jacobian elements
    */
-  virtual void getExciterJacobian(vector<int> &idx, vector<int> &jdx,
-      vector<double> &values);
+  virtual void getExciterJacobian(std::vector<int> &idx, std::vector<int> &jdx,
+      std::vector<double> &values);
 
   /**
-   * Return gradient of E_df with respect to the exciter variables
+   * Return gradient of E_fd with respect to the exciter variables
    * @param jdx indices of exciter variables
-   * @param gradEdf gradient of E_df
+   * @param gradEfd gradient of E_fd
    */
-  virtual void getGradientEdf(vector<int> &jdx, vector<double> &gradEdf);
+  virtual void getGradientEfd(std::vector<int> &jdx, std::vector<double> &gradEfd);
 
-  /**
 protected:
   double        VD, VQ;
   int           status; /**< Exciter status */
