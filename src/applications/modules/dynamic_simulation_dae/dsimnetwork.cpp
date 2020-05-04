@@ -753,6 +753,51 @@ void DSimBus::setJacobianData()
   }
   p_rowidx.resize(p_num_var);
   p_colidx.resize(p_num_var);
+
+  // Calculate total number of matrix elements
+  p_num_matrix_values = 0;
+  int igen;
+  for (igen = 0; igen<p_ngen; igen++) {
+    // get block representing couplings between generator variables
+    std::vector<int> idx, jdx;
+    std::vector<double> vals;
+    BaseGenModel *gen = p_gen[igen];
+    gen->getGeneratorJacobian(idx, jdx, vals);
+    p_num_matrix_values += vals.size();
+    if (gen->getphasExciter()) {
+      // get block representing couplings between exciter variables
+      boost::shared_ptr<BaseExcModel> exc = gen->getExciter();
+      exc->getExciterJacobian(idx, jdx, vals);
+      p_num_matrix_values += vals.size();
+      std::vector<int> efdRows;
+      std::vector<double> coefEfd;
+      if (gen->getEfdCoefs(efdRows, coefEfd)) {
+        std::vector<int> excCols;
+        std::vector<double> gradEfd;
+        int nrows = efdRows.size();
+        exc->getGradientEfd(excCols, gradEfd);
+        int ncols = excCols.size();
+        p_num_matrix_values += nrows*ncols;
+      }
+    }
+    // get block representing couplings between governor variables
+    if (gen->getphasGovernor()) {
+      // get block representing couplings between governor variables
+      boost::shared_ptr<BaseGovModel> gov = gen->getGovernor();
+      gov->getGovernorJacobian(idx, jdx, vals);
+      p_num_matrix_values += vals.size();
+      std::vector<int> pmcRows;
+      std::vector<double> coefPmc;
+      if (gen->getPmechCoefs(pmcRows, coefPmc)) {
+        std::vector<int> govCols;
+        std::vector<double> gradPmc;
+        int nrows = pmcRows.size();
+        gov->getGradientPmech(govCols, gradPmc);
+        int ncols = govCols.size();
+        p_num_matrix_values += nrows*ncols;
+      }
+    }
+  }
   p_set_jacobian = true;
 }
 
