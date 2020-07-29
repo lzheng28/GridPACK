@@ -48,6 +48,12 @@ public:
   DSim(gridpack::parallel::Communicator comm);
 
   /**
+   * Basic constructor with network argument
+   * @param network DSimNetwork used to define system
+   */
+  DSim(boost::shared_ptr<DSimNetwork> network);
+
+  /**
    * Basic destructor
    */
   ~DSim(void);

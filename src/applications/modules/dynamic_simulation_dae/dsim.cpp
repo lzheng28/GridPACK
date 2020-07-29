@@ -143,6 +143,14 @@ DSim::DSim(gridpack::parallel::Communicator comm)
 {
   p_isSetUp = 0;
   p_comm = comm;
+  p_network.reset(new DSimNetwork(p_comm));
+}
+
+DSim::DSim(boost::shared_ptr<DSimNetwork> network)
+{
+  p_isSetUp = 0;
+  p_comm = network->communicator();
+  p_network = network;
 }
 
 void DSim::setconfigurationfile(const char* configfile)
@@ -185,13 +193,17 @@ void DSim::readnetworkdatafromconfig(void)
 void DSim::setup()
 {
   if(p_isSetUp) return;
+
   p_profiler.startsetuptimer();
   /* Partition network */
+  printf("DSim:Start partitioning network\n");
   p_network->partition();
-  if(!rank()) printf("DSim:Finished partitioning network\n");
+  printf("DSim:Finished partitioning network\n");
+  //if(!rank()) printf("DSim:Finished partitioning network\n");
 
   /* Create factory */
   p_factory = new DSimFactory(p_network);
+  p_factory->dumpData();
 
   /* Load data from Data Collection objects to Bus and Branch components */
   p_factory->load();

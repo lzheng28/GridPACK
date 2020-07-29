@@ -41,7 +41,9 @@ int main(int argc, char **argv)
 
   ierr = gridpack_initialize(&argc,&argv);
 
-  DSim *dsim = new DSim();
+  gridpack::parallel::Communicator world;
+  boost::shared_ptr<DSimNetwork> network(new DSimNetwork(world));
+  DSim *dsim = new DSim(network);
 
   // Set the configuration file
   dsim->setconfigurationfile("input.xml");

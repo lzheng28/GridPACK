@@ -168,7 +168,7 @@ void DSimBus::setEvent(gridpack::math::DAESolver::EventManagerPtr eman)
     if(has_ex) {
       p_gen[i]->getExciter()->setEvent(eman);
     }
-    has_gov = p_gen[i]->getGovernor();
+    has_gov = p_gen[i]->hasGovernor();
     if(has_gov) {
       p_gen[i]->getGovernor()->setEvent(eman);
     }
