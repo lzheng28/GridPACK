@@ -1,0 +1,18 @@
+{
+    "broker": true,
+    "federates":[
+        {
+            "directory":"./",
+            "exec":"../dsf.x input_39bus_step005_pss.xml > outputallstates.txt",
+            "host":"localhost",
+            "name":"TransmissionFederate"
+        },
+        {
+            "directory":"./Distribution/",
+            "exec":"gridlabd.sh IEEE_123_feeder_0.glm",
+            "host":"localhost",
+            "name":"GridLABDFederate"
+        }
+    ],
+    "name":"Example-1a-T-D-Cosimulation-HELICSRunner"
+}

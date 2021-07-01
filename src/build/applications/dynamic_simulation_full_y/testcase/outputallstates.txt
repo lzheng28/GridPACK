@@ -1,0 +1,511 @@
+
+GridPACK math module configured on 1 processors
+
+Maximum number of iterations: 20
+
+Convergence tolerance: 0.000000
+0: I have 39 buses and 46 branches
+ repeat time = 1 
+
+Iteration 1 Tol: 1.101450e-08
+
+Iteration 2 Tol: 1.136868e-13
+
+   Branch Power Flow
+
+        Bus 1       Bus 2   CKT         P                    Q
+          1           2     1     -165.902771             7.928336
+          1          39     1      165.902771            -7.928336
+          2           3     1      473.829511           200.408689
+          2          25     1     -390.692738           110.402623
+          2          30     1     -250.000000          -239.525232
+          3           4     1      275.983126            39.419893
+          3          18     1     -627.476289           146.282261
+          4           5     1     -173.539678          -166.209547
+          4          14     1     -651.514278            26.202382
+          5           6     1     -466.173585          -189.778841
+          5           8     1      292.170995            29.366037
+          6           7     1      404.084203            78.019901
+          6          11     1     -544.452262            82.581854
+          6          31     1     -326.307450          -352.513261
+          7           8     1      169.280419            34.025008
+          8           9     1      -61.358556          -101.109127
+          9          39     1      -61.601921           -65.910128
+         10          11     1      531.611494           -14.516261
+         10          13     1      118.388506           162.736217
+         10          32     1     -650.000000          -148.219956
+         12          11     1       16.096409           -51.749045
+         12          13     1      -24.596409           -36.250955
+         13          14     1       93.596080           131.205728
+         14          15     1     -561.713432           127.795274
+         15          16     1     -887.955977            34.587147
+         16          17     1      979.950449           -80.994199
+         16          19     1    -1638.221643           284.861788
+         16          21     1     -432.001105           -67.020214
+         16          24     1     -134.615193          -141.642030
+         17          18     1      794.718949           -39.880437
+         17          27     1      178.187292          -117.744522
+         19          20     1     -562.954085            -3.432588
+         19          33     1    -1121.501225          -245.297465
+         20          34     1    -1193.431796          -155.278890
+         21          22     1     -707.581661          -183.913840
+         22          23     1      -61.885780            69.108739
+         22          35     1     -650.000000          -302.180406
+         23          24     1      447.774142            79.402891
+         23          36     1     -757.217060           -76.465527
+         25          26     1      -87.390125            51.782450
+         25          37     1     -538.328974            13.579694
+         26          27     1      103.875567           149.827318
+         26          28     1     -140.773583           -30.337104
+         26          29     1     -189.901986           -33.871501
+         28          29     1     -347.590295            15.173933
+         29          38     1     -824.586204           -49.885679
+
+   Generator Power
+
+   Bus Number  GenID        Pgen              Qgen
+         30      1        2.500000          2.610789
+         31      1        3.355074          4.219924
+         32      1        6.500000          2.484207
+         33      1       11.320000          4.582726
+         34      1       12.080000          4.466430
+         35      1        6.500000          3.753525
+         36      1        7.600000          2.278575
+         37      1        5.400000          0.510333
+         38      1        8.300000          1.554547
+         39      1       10.000000          1.239720
+
+   Bus Voltages and Phase Angles
+
+   Bus Number      Phase Angle      Voltage Magnitude
+          1         -3.120174             1.038664
+          2          0.625602             1.028401
+          3         -3.234586             0.993242
+          4         -6.656288             0.980582
+          5         -5.436710             1.003079
+          6         -4.771747             1.008939
+          7         -6.855725             0.999558
+          8         -7.294633             0.997165
+          9         -6.156080             1.028706
+         10         -0.922552             1.007823
+         11         -2.216377             1.006431
+         12         -1.763267             0.989682
+         13         -1.174051             1.000261
+         14         -1.650446             0.985334
+         15          5.821080             0.971789
+         16         10.873923             0.979694
+         17          5.649686             0.983550
+         18          1.770696             0.982939
+         19         30.140747             1.003022
+         20         35.073848             0.954448
+         21         14.286535             0.992532
+         22         19.785474             1.027121
+         23         20.136213             1.020132
+         24         11.319276             0.988469
+         25          2.856401             1.045909
+         26          4.502807             1.024348
+         27          3.775648             0.999704
+         28          8.162665             1.027450
+         29         11.028877             1.029313
+         30          3.093248             1.047500
+         31          0.000000             1.040000
+         32          7.148033             0.983100
+         33         39.842967             0.997200
+         34         47.951914             1.012300
+         35         24.857037             1.049300
+         36         31.059287             1.063500
+         37          9.700184             1.027800
+         38         18.175124             1.026500
+         39         -5.324580             1.030000
+p[0] generatorParameters: IEEE39bus_gridpack_pss.dyr
+p[0] finished Generator parameters
+p[0] Got to 1
+DSFullBus::load(), Bus No.: 22013 
+DSFullBus::load():  entering processing load model 
+ Bus 1 have 0 power flow loads, total 0.000000 + j0.000000 
+ Bus 1 have 0 dynamic loads, total 0.000000 + j0.000000 
+ Bus 1 have remaining static loads for Y-bus: p_pl: 0.000000 pu, p_ql: 0.000000 pu, 
+DSFullBus::load(), Bus No.: 0 
+DSFullBus::load():  entering processing load model 
+ Bus 2 have 0 power flow loads, total 0.000000 + j0.000000 
+ Bus 2 have 0 dynamic loads, total 0.000000 + j0.000000 
+ Bus 2 have remaining static loads for Y-bus: p_pl: 0.000000 pu, p_ql: 0.000000 pu, 
+DSFullBus::load(), Bus No.: 0 
+DSFullBus::load():  entering processing load model 
+bus 3 has 1 power flow loads 
+0 th power flow load at bus 3: 822.000000 + j2.400000
+ Bus 3 have 1 power flow loads, total 822.000000 + j2.400000 
+ Bus 3 have 0 dynamic loads, total 0.000000 + j0.000000 
+ Bus 3 have remaining static loads for Y-bus: p_pl: 8.220000 pu, p_ql: 0.024000 pu, 
+DSFullBus::load(), Bus No.: -1 
+DSFullBus::load():  entering processing load model 
+bus 4 has 1 power flow loads 
+0 th power flow load at bus 4: 1100.000000 + j184.000000
+ Bus 4 have 1 power flow loads, total 1100.000000 + j184.000000 
+ Bus 4 have 0 dynamic loads, total 0.000000 + j0.000000 
+ Bus 4 have remaining static loads for Y-bus: p_pl: 11.000000 pu, p_ql: 1.840000 pu, 
+DSFullBus::load(), Bus No.: 0 
+DSFullBus::load():  entering processing load model 
+ Bus 5 have 0 power flow loads, total 0.000000 + j0.000000 
+ Bus 5 have 0 dynamic loads, total 0.000000 + j0.000000 
+ Bus 5 have remaining static loads for Y-bus: p_pl: 0.000000 pu, p_ql: 0.000000 pu, 
+DSFullBus::load(), Bus No.: 22013 
+DSFullBus::load():  entering processing load model 
+ Bus 6 have 0 power flow loads, total 0.000000 + j0.000000 
+ Bus 6 have 0 dynamic loads, total 0.000000 + j0.000000 
+ Bus 6 have remaining static loads for Y-bus: p_pl: 0.000000 pu, p_ql: 0.000000 pu, 
+DSFullBus::load(), Bus No.: 0 
+DSFullBus::load():  entering processing load model 
+bus 7 has 1 power flow loads 
+0 th power flow load at bus 7: 233.800000 + j40.000000
+ Bus 7 have 1 power flow loads, total 233.800000 + j40.000000 
+ Bus 7 have 0 dynamic loads, total 0.000000 + j0.000000 
+ Bus 7 have remaining static loads for Y-bus: p_pl: 2.338000 pu, p_ql: 0.400000 pu, 
+DSFullBus::load(), Bus No.: 0 
+DSFullBus::load():  entering processing load model 
+bus 8 has 1 power flow loads 
+0 th power flow load at bus 8: 522.000000 + j176.000000
+ Bus 8 have 1 power flow loads, total 522.000000 + j176.000000 
+ Bus 8 have 0 dynamic loads, total 0.000000 + j0.000000 
+ Bus 8 have remaining static loads for Y-bus: p_pl: 5.220000 pu, p_ql: 1.760000 pu, 
+DSFullBus::load(), Bus No.: 22013 
+DSFullBus::load():  entering processing load model 
+ Bus 9 have 0 power flow loads, total 0.000000 + j0.000000 
+ Bus 9 have 0 dynamic loads, total 0.000000 + j0.000000 
+ Bus 9 have remaining static loads for Y-bus: p_pl: 0.000000 pu, p_ql: 0.000000 pu, 
+DSFullBus::load(), Bus No.: 0 
+DSFullBus::load():  entering processing load model 
+ Bus 10 have 0 power flow loads, total 0.000000 + j0.000000 
+ Bus 10 have 0 dynamic loads, total 0.000000 + j0.000000 
+ Bus 10 have remaining static loads for Y-bus: p_pl: 0.000000 pu, p_ql: 0.000000 pu, 
+DSFullBus::load(), Bus No.: 0 
+DSFullBus::load():  entering processing load model 
+ Bus 11 have 0 power flow loads, total 0.000000 + j0.000000 
+ Bus 11 have 0 dynamic loads, total 0.000000 + j0.000000 
+ Bus 11 have remaining static loads for Y-bus: p_pl: 0.000000 pu, p_ql: 0.000000 pu, 
+DSFullBus::load(), Bus No.: 538976288 
+DSFullBus::load():  entering processing load model 
+bus 12 has 1 power flow loads 
+0 th power flow load at bus 12: 8.500000 + j88.000000
+ Bus 12 have 1 power flow loads, total 8.500000 + j88.000000 
+ Bus 12 have 0 dynamic loads, total 0.000000 + j0.000000 
+ Bus 12 have remaining static loads for Y-bus: p_pl: 0.085000 pu, p_ql: 0.880000 pu, 
+DSFullBus::load(), Bus No.: 0 
+DSFullBus::load():  entering processing load model 
+ Bus 13 have 0 power flow loads, total 0.000000 + j0.000000 
+ Bus 13 have 0 dynamic loads, total 0.000000 + j0.000000 
+ Bus 13 have remaining static loads for Y-bus: p_pl: 0.000000 pu, p_ql: 0.000000 pu, 
+DSFullBus::load(), Bus No.: 0 
+DSFullBus::load():  entering processing load model 
+ Bus 14 have 0 power flow loads, total 0.000000 + j0.000000 
+ Bus 14 have 0 dynamic loads, total 0.000000 + j0.000000 
+ Bus 14 have remaining static loads for Y-bus: p_pl: 0.000000 pu, p_ql: 0.000000 pu, 
+DSFullBus::load(), Bus No.: 0 
+DSFullBus::load():  entering processing load model 
+bus 15 has 1 power flow loads 
+0 th power flow load at bus 15: 320.000000 + j53.000000
+ Bus 15 have 1 power flow loads, total 320.000000 + j53.000000 
+ Bus 15 have 0 dynamic loads, total 0.000000 + j0.000000 
+ Bus 15 have remaining static loads for Y-bus: p_pl: 3.200000 pu, p_ql: 0.530000 pu, 
+DSFullBus::load(), Bus No.: 0 
+DSFullBus::load():  entering processing load model 
+bus 16 has 1 power flow loads 
+0 th power flow load at bus 16: 329.400000 + j-23.000000
+ Bus 16 have 1 power flow loads, total 329.400000 + j-23.000000 
+ Bus 16 have 0 dynamic loads, total 0.000000 + j0.000000 
+ Bus 16 have remaining static loads for Y-bus: p_pl: 3.294000 pu, p_ql: -0.230000 pu, 
+DSFullBus::load(), Bus No.: 0 
+DSFullBus::load():  entering processing load model 
+ Bus 17 have 0 power flow loads, total 0.000000 + j0.000000 
+ Bus 17 have 0 dynamic loads, total 0.000000 + j0.000000 
+ Bus 17 have remaining static loads for Y-bus: p_pl: 0.000000 pu, p_ql: 0.000000 pu, 
+DSFullBus::load(), Bus No.: 0 
+DSFullBus::load():  entering processing load model 
+bus 18 has 1 power flow loads 
+0 th power flow load at bus 18: 158.000000 + j30.000000
+ Bus 18 have 1 power flow loads, total 158.000000 + j30.000000 
+ Bus 18 have 0 dynamic loads, total 0.000000 + j0.000000 
+ Bus 18 have remaining static loads for Y-bus: p_pl: 1.580000 pu, p_ql: 0.300000 pu, 
+DSFullBus::load(), Bus No.: 36 
+DSFullBus::load():  entering processing load model 
+ Bus 19 have 0 power flow loads, total 0.000000 + j0.000000 
+ Bus 19 have 0 dynamic loads, total 0.000000 + j0.000000 
+ Bus 19 have remaining static loads for Y-bus: p_pl: 0.000000 pu, p_ql: 0.000000 pu, 
+DSFullBus::load(), Bus No.: 0 
+DSFullBus::load():  entering processing load model 
+bus 20 has 1 power flow loads 
+0 th power flow load at bus 20: 628.000000 + j103.000000
+ Bus 20 have 1 power flow loads, total 628.000000 + j103.000000 
+ Bus 20 have 0 dynamic loads, total 0.000000 + j0.000000 
+ Bus 20 have remaining static loads for Y-bus: p_pl: 6.280000 pu, p_ql: 1.030000 pu, 
+DSFullBus::load(), Bus No.: 0 
+DSFullBus::load():  entering processing load model 
+bus 21 has 1 power flow loads 
+0 th power flow load at bus 21: 274.000000 + j115.000000
+ Bus 21 have 1 power flow loads, total 274.000000 + j115.000000 
+ Bus 21 have 0 dynamic loads, total 0.000000 + j0.000000 
+ Bus 21 have remaining static loads for Y-bus: p_pl: 2.740000 pu, p_ql: 1.150000 pu, 
+DSFullBus::load(), Bus No.: 0 
+DSFullBus::load():  entering processing load model 
+ Bus 22 have 0 power flow loads, total 0.000000 + j0.000000 
+ Bus 22 have 0 dynamic loads, total 0.000000 + j0.000000 
+ Bus 22 have remaining static loads for Y-bus: p_pl: 0.000000 pu, p_ql: 0.000000 pu, 
+DSFullBus::load(), Bus No.: 0 
+DSFullBus::load():  entering processing load model 
+bus 23 has 1 power flow loads 
+0 th power flow load at bus 23: 247.500000 + j84.600000
+ Bus 23 have 1 power flow loads, total 247.500000 + j84.600000 
+ Bus 23 have 0 dynamic loads, total 0.000000 + j0.000000 
+ Bus 23 have remaining static loads for Y-bus: p_pl: 2.475000 pu, p_ql: 0.846000 pu, 
+DSFullBus::load(), Bus No.: 0 
+DSFullBus::load():  entering processing load model 
+bus 24 has 1 power flow loads 
+0 th power flow load at bus 24: 308.600000 + j-92.200000
+ Bus 24 have 1 power flow loads, total 308.600000 + j-92.200000 
+ Bus 24 have 0 dynamic loads, total 0.000000 + j0.000000 
+ Bus 24 have remaining static loads for Y-bus: p_pl: 3.086000 pu, p_ql: -0.922000 pu, 
+DSFullBus::load(), Bus No.: 0 
+DSFullBus::load():  entering processing load model 
+bus 25 has 1 power flow loads 
+0 th power flow load at bus 25: 224.000000 + j47.200000
+ Bus 25 have 1 power flow loads, total 224.000000 + j47.200000 
+ Bus 25 have 0 dynamic loads, total 0.000000 + j0.000000 
+ Bus 25 have remaining static loads for Y-bus: p_pl: 2.240000 pu, p_ql: 0.472000 pu, 
+DSFullBus::load(), Bus No.: 0 
+DSFullBus::load():  entering processing load model 
+bus 26 has 1 power flow loads 
+0 th power flow load at bus 26: 139.000000 + j17.000000
+ Bus 26 have 1 power flow loads, total 139.000000 + j17.000000 
+ Bus 26 have 0 dynamic loads, total 0.000000 + j0.000000 
+ Bus 26 have remaining static loads for Y-bus: p_pl: 1.390000 pu, p_ql: 0.170000 pu, 
+DSFullBus::load(), Bus No.: 0 
+DSFullBus::load():  entering processing load model 
+bus 27 has 1 power flow loads 
+0 th power flow load at bus 27: 281.000000 + j75.500000
+ Bus 27 have 1 power flow loads, total 281.000000 + j75.500000 
+ Bus 27 have 0 dynamic loads, total 0.000000 + j0.000000 
+ Bus 27 have remaining static loads for Y-bus: p_pl: 2.810000 pu, p_ql: 0.755000 pu, 
+DSFullBus::load(), Bus No.: 0 
+DSFullBus::load():  entering processing load model 
+bus 28 has 1 power flow loads 
+0 th power flow load at bus 28: 206.000000 + j27.600000
+ Bus 28 have 1 power flow loads, total 206.000000 + j27.600000 
+ Bus 28 have 0 dynamic loads, total 0.000000 + j0.000000 
+ Bus 28 have remaining static loads for Y-bus: p_pl: 2.060000 pu, p_ql: 0.276000 pu, 
+DSFullBus::load(), Bus No.: 0 
+DSFullBus::load():  entering processing load model 
+bus 29 has 1 power flow loads 
+0 th power flow load at bus 29: 283.500000 + j126.900000
+ Bus 29 have 1 power flow loads, total 283.500000 + j126.900000 
+ Bus 29 have 0 dynamic loads, total 0.000000 + j0.000000 
+ Bus 29 have remaining static loads for Y-bus: p_pl: 2.835000 pu, p_ql: 1.269000 pu, 
+DSFullBus::load(), Bus No.: 0 
+gensal parameters:     6.500000,     0.000000,    0.000000,     1.800000,     1.700000,     0.300000,     0.250000,     0.200000,     8.000000,     0.030000,     0.050000,     0.170000,     0.550000  
+DSFullBus::load():  entering processing load model 
+ Bus 30 have 0 power flow loads, total 0.000000 + j0.000000 
+ Bus 30 have 0 dynamic loads, total 0.000000 + j0.000000 
+ Bus 30 have remaining static loads for Y-bus: p_pl: 0.000000 pu, p_ql: 0.000000 pu, 
+--------------------!!renke debug DSFullBus::load(), Bus No.: 0 set bcomputefreq as true 
+DSFullBus::load(), Bus No.: 0 
+gensal parameters:     6.500000,     0.000000,    0.000000,     1.800000,     1.700000,     0.300000,     0.250000,     0.200000,     8.000000,     0.030000,     0.050000,     0.170000,     0.550000  
+DSFullBus::load():  entering processing load model 
+bus 31 has 1 power flow loads 
+0 th power flow load at bus 31: 9.200000 + j4.600000
+ Bus 31 have 1 power flow loads, total 9.200000 + j4.600000 
+ Bus 31 have 0 dynamic loads, total 0.000000 + j0.000000 
+ Bus 31 have remaining static loads for Y-bus: p_pl: 0.092000 pu, p_ql: 0.046000 pu, 
+DSFullBus::load(), Bus No.: 0 
+gensal parameters:     6.500000,     0.000000,    0.000000,     1.800000,     1.700000,     0.300000,     0.250000,     0.200000,     8.000000,     0.030000,     0.050000,     0.170000,     0.550000  
+DSFullBus::load():  entering processing load model 
+ Bus 32 have 0 power flow loads, total 0.000000 + j0.000000 
+ Bus 32 have 0 dynamic loads, total 0.000000 + j0.000000 
+ Bus 32 have remaining static loads for Y-bus: p_pl: 0.000000 pu, p_ql: 0.000000 pu, 
+DSFullBus::load(), Bus No.: 0 
+gensal parameters:     6.500000,     0.000000,    0.000000,     1.800000,     1.700000,     0.300000,     0.250000,     0.200000,     8.000000,     0.030000,     0.050000,     0.170000,     0.550000  
+DSFullBus::load():  entering processing load model 
+ Bus 33 have 0 power flow loads, total 0.000000 + j0.000000 
+ Bus 33 have 0 dynamic loads, total 0.000000 + j0.000000 
+ Bus 33 have remaining static loads for Y-bus: p_pl: 0.000000 pu, p_ql: 0.000000 pu, 
+DSFullBus::load(), Bus No.: 0 
+---------renkedebug: bus 34: has pssgensal parameters:     6.500000,     0.000000,    0.000000,     1.800000,     1.700000,     0.300000,     0.250000,     0.200000,     8.000000,     0.030000,     0.050000,     0.170000,     0.550000  
+----!!renke debug:  psssim load:  1, 34, 30,   100.000000,     20.000000,      0.060000,      0.040000,      0.080000,      0.040000,      1.000000,     -1.000000 
+DSFullBus::load():  entering processing load model 
+ Bus 34 have 0 power flow loads, total 0.000000 + j0.000000 
+ Bus 34 have 0 dynamic loads, total 0.000000 + j0.000000 
+ Bus 34 have remaining static loads for Y-bus: p_pl: 0.000000 pu, p_ql: 0.000000 pu, 
+--------------------!!renke debug DSFullBus::load(), Bus No.: 0 set bcomputefreq as true 
+DSFullBus::load(), Bus No.: 6 
+gensal parameters:     6.500000,     0.000000,    0.000000,     1.800000,     1.700000,     0.300000,     0.250000,     0.200000,     8.000000,     0.030000,     0.050000,     0.170000,     0.550000  
+DSFullBus::load():  entering processing load model 
+ Bus 35 have 0 power flow loads, total 0.000000 + j0.000000 
+ Bus 35 have 0 dynamic loads, total 0.000000 + j0.000000 
+ Bus 35 have remaining static loads for Y-bus: p_pl: 0.000000 pu, p_ql: 0.000000 pu, 
+DSFullBus::load(), Bus No.: 1073829921 
+gensal parameters:     6.500000,     0.000000,    0.000000,     1.800000,     1.700000,     0.300000,     0.250000,     0.200000,     8.000000,     0.030000,     0.050000,     0.170000,     0.550000  
+DSFullBus::load():  entering processing load model 
+ Bus 36 have 0 power flow loads, total 0.000000 + j0.000000 
+ Bus 36 have 0 dynamic loads, total 0.000000 + j0.000000 
+ Bus 36 have remaining static loads for Y-bus: p_pl: 0.000000 pu, p_ql: 0.000000 pu, 
+DSFullBus::load(), Bus No.: 0 
+gensal parameters:     6.500000,     0.000000,    0.000000,     1.800000,     1.700000,     0.300000,     0.250000,     0.200000,     8.000000,     0.030000,     0.050000,     0.170000,     0.550000  
+DSFullBus::load():  entering processing load model 
+ Bus 37 have 0 power flow loads, total 0.000000 + j0.000000 
+ Bus 37 have 0 dynamic loads, total 0.000000 + j0.000000 
+ Bus 37 have remaining static loads for Y-bus: p_pl: 0.000000 pu, p_ql: 0.000000 pu, 
+DSFullBus::load(), Bus No.: 0 
+gensal parameters:     6.500000,     0.000000,    0.000000,     1.800000,     1.700000,     0.300000,     0.250000,     0.200000,     8.000000,     0.030000,     0.050000,     0.170000,     0.550000  
+DSFullBus::load():  entering processing load model 
+ Bus 38 have 0 power flow loads, total 0.000000 + j0.000000 
+ Bus 38 have 0 dynamic loads, total 0.000000 + j0.000000 
+ Bus 38 have remaining static loads for Y-bus: p_pl: 0.000000 pu, p_ql: 0.000000 pu, 
+DSFullBus::load(), Bus No.: 0 
+gensal parameters:     6.500000,     0.000000,    0.000000,     1.800000,     1.700000,     0.300000,     0.250000,     0.200000,     8.000000,     0.030000,     0.050000,     0.170000,     0.550000  
+DSFullBus::load():  entering processing load model 
+bus 39 has 1 power flow loads 
+0 th power flow load at bus 39: 1104.000000 + j250.000000
+ Bus 39 have 1 power flow loads, total 1104.000000 + j250.000000 
+ Bus 39 have 0 dynamic loads, total 0.000000 + j0.000000 
+ Bus 39 have remaining static loads for Y-bus: p_pl: 11.040000 pu, p_ql: 2.500000 pu, 
+entering DSFullBranch::load() 
+entering DSFullBranch::load() 
+entering DSFullBranch::load() 
+entering DSFullBranch::load() 
+entering DSFullBranch::load() 
+entering DSFullBranch::load() 
+entering DSFullBranch::load() 
+entering DSFullBranch::load() 
+entering DSFullBranch::load() 
+entering DSFullBranch::load() 
+entering DSFullBranch::load() 
+entering DSFullBranch::load() 
+entering DSFullBranch::load() 
+entering DSFullBranch::load() 
+entering DSFullBranch::load() 
+entering DSFullBranch::load() 
+entering DSFullBranch::load() 
+entering DSFullBranch::load() 
+entering DSFullBranch::load() 
+entering DSFullBranch::load() 
+entering DSFullBranch::load() 
+entering DSFullBranch::load() 
+entering DSFullBranch::load() 
+entering DSFullBranch::load() 
+entering DSFullBranch::load() 
+entering DSFullBranch::load() 
+entering DSFullBranch::load() 
+entering DSFullBranch::load() 
+entering DSFullBranch::load() 
+entering DSFullBranch::load() 
+entering DSFullBranch::load() 
+entering DSFullBranch::load() 
+entering DSFullBranch::load() 
+entering DSFullBranch::load() 
+entering DSFullBranch::load() 
+entering DSFullBranch::load() 
+entering DSFullBranch::load() 
+entering DSFullBranch::load() 
+entering DSFullBranch::load() 
+entering DSFullBranch::load() 
+entering DSFullBranch::load() 
+entering DSFullBranch::load() 
+entering DSFullBranch::load() 
+entering DSFullBranch::load() 
+entering DSFullBranch::load() 
+entering DSFullBranch::load() 
+p[0] Got to 2
+p[0] Got to 3
+p[0] Got to 4
+Monitoring generators:
+  Bus:       34 Generator ID: 1 
+Generator Watch Frequency: 1
+p_gen_buses: 1
+DSFullBus::matrixDiagValues, bus 1: p_pl = 0.000000, p_ql = 0.000000, p_voltage = 1.038664
+DSFullBus::matrixDiagValues, bus 2: p_pl = 0.000000, p_ql = 0.000000, p_voltage = 1.028401
+DSFullBus::matrixDiagValues, bus 3: p_pl = 8.220000, p_ql = 0.024000, p_voltage = 0.993242
+DSFullBus::matrixDiagValues, bus 4: p_pl = 11.000000, p_ql = 1.840000, p_voltage = 0.980582
+DSFullBus::matrixDiagValues, bus 5: p_pl = 0.000000, p_ql = 0.000000, p_voltage = 1.003079
+DSFullBus::matrixDiagValues, bus 6: p_pl = 0.000000, p_ql = 0.000000, p_voltage = 1.008939
+DSFullBus::matrixDiagValues, bus 7: p_pl = 2.338000, p_ql = 0.400000, p_voltage = 0.999558
+DSFullBus::matrixDiagValues, bus 8: p_pl = 5.220000, p_ql = 1.760000, p_voltage = 0.997165
+DSFullBus::matrixDiagValues, bus 9: p_pl = 0.000000, p_ql = 0.000000, p_voltage = 1.028706
+DSFullBus::matrixDiagValues, bus 10: p_pl = 0.000000, p_ql = 0.000000, p_voltage = 1.007823
+DSFullBus::matrixDiagValues, bus 11: p_pl = 0.000000, p_ql = 0.000000, p_voltage = 1.006431
+DSFullBus::matrixDiagValues, bus 12: p_pl = 0.085000, p_ql = 0.880000, p_voltage = 0.989682
+DSFullBus::matrixDiagValues, bus 13: p_pl = 0.000000, p_ql = 0.000000, p_voltage = 1.000261
+DSFullBus::matrixDiagValues, bus 14: p_pl = 0.000000, p_ql = 0.000000, p_voltage = 0.985334
+DSFullBus::matrixDiagValues, bus 15: p_pl = 3.200000, p_ql = 0.530000, p_voltage = 0.971789
+DSFullBus::matrixDiagValues, bus 16: p_pl = 3.294000, p_ql = -0.230000, p_voltage = 0.979694
+DSFullBus::matrixDiagValues, bus 17: p_pl = 0.000000, p_ql = 0.000000, p_voltage = 0.983550
+DSFullBus::matrixDiagValues, bus 18: p_pl = 1.580000, p_ql = 0.300000, p_voltage = 0.982939
+DSFullBus::matrixDiagValues, bus 19: p_pl = 0.000000, p_ql = 0.000000, p_voltage = 1.003022
+DSFullBus::matrixDiagValues, bus 20: p_pl = 6.280000, p_ql = 1.030000, p_voltage = 0.954448
+DSFullBus::matrixDiagValues, bus 21: p_pl = 2.740000, p_ql = 1.150000, p_voltage = 0.992532
+DSFullBus::matrixDiagValues, bus 22: p_pl = 0.000000, p_ql = 0.000000, p_voltage = 1.027121
+DSFullBus::matrixDiagValues, bus 23: p_pl = 2.475000, p_ql = 0.846000, p_voltage = 1.020132
+DSFullBus::matrixDiagValues, bus 24: p_pl = 3.086000, p_ql = -0.922000, p_voltage = 0.988469
+DSFullBus::matrixDiagValues, bus 25: p_pl = 2.240000, p_ql = 0.472000, p_voltage = 1.045909
+DSFullBus::matrixDiagValues, bus 26: p_pl = 1.390000, p_ql = 0.170000, p_voltage = 1.024348
+DSFullBus::matrixDiagValues, bus 27: p_pl = 2.810000, p_ql = 0.755000, p_voltage = 0.999704
+DSFullBus::matrixDiagValues, bus 28: p_pl = 2.060000, p_ql = 0.276000, p_voltage = 1.027450
+DSFullBus::matrixDiagValues, bus 29: p_pl = 2.835000, p_ql = 1.269000, p_voltage = 1.029313
+DSFullBus::matrixDiagValues, bus 30: p_pl = 0.000000, p_ql = 0.000000, p_voltage = 1.047500
+DSFullBus::matrixDiagValues, bus 31: p_pl = 0.092000, p_ql = 0.046000, p_voltage = 1.040000
+DSFullBus::matrixDiagValues, bus 32: p_pl = 0.000000, p_ql = 0.000000, p_voltage = 0.983100
+DSFullBus::matrixDiagValues, bus 33: p_pl = 0.000000, p_ql = 0.000000, p_voltage = 0.997200
+DSFullBus::matrixDiagValues, bus 34: p_pl = 0.000000, p_ql = 0.000000, p_voltage = 1.012300
+DSFullBus::matrixDiagValues, bus 35: p_pl = 0.000000, p_ql = 0.000000, p_voltage = 1.049300
+DSFullBus::matrixDiagValues, bus 36: p_pl = 0.000000, p_ql = 0.000000, p_voltage = 1.063500
+DSFullBus::matrixDiagValues, bus 37: p_pl = 0.000000, p_ql = 0.000000, p_voltage = 1.027800
+DSFullBus::matrixDiagValues, bus 38: p_pl = 0.000000, p_ql = 0.000000, p_voltage = 1.026500
+DSFullBus::matrixDiagValues, bus 39: p_pl = 11.040000, p_ql = 2.500000, p_voltage = 1.030000
+bus 1 entering YDYNLOAD mode: p_ndyn_load: 0 
+bus 2 entering YDYNLOAD mode: p_ndyn_load: 0 
+bus 3 entering YDYNLOAD mode: p_ndyn_load: 0 
+bus 4 entering YDYNLOAD mode: p_ndyn_load: 0 
+bus 5 entering YDYNLOAD mode: p_ndyn_load: 0 
+bus 6 entering YDYNLOAD mode: p_ndyn_load: 0 
+bus 7 entering YDYNLOAD mode: p_ndyn_load: 0 
+bus 8 entering YDYNLOAD mode: p_ndyn_load: 0 
+bus 9 entering YDYNLOAD mode: p_ndyn_load: 0 
+bus 10 entering YDYNLOAD mode: p_ndyn_load: 0 
+bus 11 entering YDYNLOAD mode: p_ndyn_load: 0 
+bus 12 entering YDYNLOAD mode: p_ndyn_load: 0 
+bus 13 entering YDYNLOAD mode: p_ndyn_load: 0 
+bus 14 entering YDYNLOAD mode: p_ndyn_load: 0 
+bus 15 entering YDYNLOAD mode: p_ndyn_load: 0 
+bus 16 entering YDYNLOAD mode: p_ndyn_load: 0 
+bus 17 entering YDYNLOAD mode: p_ndyn_load: 0 
+bus 18 entering YDYNLOAD mode: p_ndyn_load: 0 
+bus 19 entering YDYNLOAD mode: p_ndyn_load: 0 
+bus 20 entering YDYNLOAD mode: p_ndyn_load: 0 
+bus 21 entering YDYNLOAD mode: p_ndyn_load: 0 
+bus 22 entering YDYNLOAD mode: p_ndyn_load: 0 
+bus 23 entering YDYNLOAD mode: p_ndyn_load: 0 
+bus 24 entering YDYNLOAD mode: p_ndyn_load: 0 
+bus 25 entering YDYNLOAD mode: p_ndyn_load: 0 
+bus 26 entering YDYNLOAD mode: p_ndyn_load: 0 
+bus 27 entering YDYNLOAD mode: p_ndyn_load: 0 
+bus 28 entering YDYNLOAD mode: p_ndyn_load: 0 
+bus 29 entering YDYNLOAD mode: p_ndyn_load: 0 
+bus 30 entering YDYNLOAD mode: p_ndyn_load: 0 
+bus 31 entering YDYNLOAD mode: p_ndyn_load: 0 
+bus 32 entering YDYNLOAD mode: p_ndyn_load: 0 
+bus 33 entering YDYNLOAD mode: p_ndyn_load: 0 
+bus 34 entering YDYNLOAD mode: p_ndyn_load: 0 
+bus 35 entering YDYNLOAD mode: p_ndyn_load: 0 
+bus 36 entering YDYNLOAD mode: p_ndyn_load: 0 
+bus 37 entering YDYNLOAD mode: p_ndyn_load: 0 
+bus 38 entering YDYNLOAD mode: p_ndyn_load: 0 
+bus 39 entering YDYNLOAD mode: p_ndyn_load: 0 
+p_pg = 250.000000, p_qg = 261.078860, MVABase = 1000.000000
+p_pg = 335.507450, p_qg = 421.992360, MVABase = 1000.000000
+p_pg = 650.000000, p_qg = 248.420690, MVABase = 1000.000000
+p_pg = 1132.000000, p_qg = 458.272624, MVABase = 2000.000000
+p_pg = 1208.000000, p_qg = 446.642962, MVABase = 2000.000000
+----renke debug: psssim init:      1.000000,      0.000000,      0.000000,      0.000000,      1.500000,      2.000000 
+p_pg = 650.000000, p_qg = 375.352492, MVABase = 1000.000000
+p_pg = 760.000000, p_qg = 227.857476, MVABase = 1000.000000
+p_pg = 540.000000, p_qg = 51.033308, MVABase = 1000.000000
+p_pg = 830.000000, p_qg = 155.454706, MVABase = 1000.000000
+p_pg = 1000.000000, p_qg = 123.971969, MVABase = 1000.000000
+-------------!!!helics test: HELICS Version: 2.6.1 (2020-10-15)

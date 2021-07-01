@@ -1,0 +1,55 @@
+{ 
+    "name": "PST", 
+    "observer": false, 
+    "rollback": false, 
+    "only_update_on_change": false, 
+    "only_transmit_on_change": false, 
+    "source_only": false, 
+    "uninterruptible": true, 
+	"coreType":"zmq",
+    "max_iterations": 10, 
+    "period": 0.005, 
+    "offset": 0.0, 
+    "time_delta": "1ms", 
+    "output_delay": 0, 
+    "input_delay": 0, 
+    
+    "publications": [
+	{
+	    "global" : true,
+            "key": "bus30_freq",
+	    "type": "complex",
+            "unit": "Hz" 
+        },
+	{
+	    "global" : true,
+            "key": "bus34_freq",
+	    "type": "complex",
+            "unit": "Hz" 
+        },
+        {
+	    "global" : true,
+            "key": "delta_freq",
+	    "type": "complex",
+            "unit": "Hz" 
+        },
+        {
+            "global" : true,
+            "key": "results",
+	    "type": "complex"
+        }
+    ],
+	
+	"subscriptions": [
+          {
+               "global" : true,
+	       "type": "complex",
+	       "key" : "IEEE_123_feeder_0/totalLoad",
+               "unit" : "VA",
+               "info" : "{
+                    \"object\" : \"network_node\",
+                    \"property\" : \"distribution_load\"
+               }"
+          }
+     ]
+}

@@ -1,0 +1,10 @@
+# file...... output/IEEE_123_feeder_0_swing_node.csv
+# date...... Thu Jul  1 15:31:47 2021
+# user...... lei
+# host...... (null)
+# target.... substation 3
+# trigger... (none)
+# interval.. 60
+# limit..... 0
+# timestamp,positive_sequence_voltage,distribution_load
+2013-08-28 00:00:00 PST,+138000+0i,+1.6262e+06+855353j

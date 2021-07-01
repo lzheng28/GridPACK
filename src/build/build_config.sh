@@ -5,9 +5,10 @@ CXXFLAGS=-lrt
 export CC CXX CXXFLAGS
 
 cmake \
-    -D PETSC_DIR:STRING="/home/huan495/petsc-3.7.7" \
+    -D PETSC_ARCH:STRING="arch-linux2-cxx-debug" \
+    -D PETSC_DIR:STRING="/home/lei/Install_package/petsc-v3.7.7" \
+    -D GA_DIR:STRING='/home/lei/software/ga-5.7' \
     -D PARMETIS_DIR:PATH="/usr" \
-    -D GA_EXTRA_LIBS:STRING="-lscalapack-openmpi -lblacsCinit-openmpi -lblacs-openmpi -llapack -lblas -lgfortran -lrt" \
     -D MPI_CXX_COMPILER:STRING="mpicxx" \
     -D MPI_C_COMPILER:STRING="mpicc" \
     -D MPIEXEC:STRING="mpiexec" \
@@ -16,9 +17,10 @@ cmake \
     -D USE_GLPK:BOOL=ON \
     -D GLPK_ROOT_DIR:PATH="/usr" \
     -D BUILD_SHARED_LIBS:BOOL=OFF \
-    -D CMAKE_INSTALL_PREFIX:PATH="$HOME/gridpack" \
+    -D CMAKE_INSTALL_PREFIX:PATH="$HOME/software/gridpack_lzheng" \
     -D CMAKE_VERBOSE_MAKEFILE:BOOL=TRUE \
-    -D HELICS_INSTALL_DIR:PATH="/home/huan495/HELICS/install-new" \
-    -D ZEROMQ_INSTALL_DIR:PATH="/home/huan495/zmq-install" \
+    -D BOOST_ROOT:STRING='/home/lei/software/boost_1_70_0' \
+    -D HELICS_INSTALL_DIR:PATH="/home/lei/software/helics-2.6.1" \
+    -D ZEROMQ_INSTALL_DIR:PATH="/usr/lib/x86_64-linux-gnu" \
     CXXFLAGS=-lrt \
     ..

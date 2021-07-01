@@ -26,6 +26,9 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include "json.hpp"
+
+using json = nlohmann::json;
 
 using namespace std;
 
@@ -230,6 +233,11 @@ void gridpack::dynamic_simulation::DSFullApp::initialize()
     p_busIO->header("Missing generators on at least one processor\n");
     return;
   }
+
+#ifdef USE_HELICS
+// if use HELICS, we need to store the generator states delta and speed
+  saveTimeSeries(true);
+#endif  
 }
 
 /**
@@ -465,8 +473,8 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
 #ifdef USE_HELICS
 	//std::cout << "-------------!!!helics test: HELICS Version: " << helics::versionString << std::endl;
 	cout << "-------------!!!helics test: HELICS Version: " << helics::versionString << endl;
-	string configFile = "/home/huan495/gridpack-dev/src/build/applications/dynamic_simulation_full_y/testcase/helics_39bus_3.json";
-    helics::ValueFederate fed(configFile);
+	string configFile = "/home/lei/Install_package/GridPACK_lzheng/src/build/applications/dynamic_simulation_full_y/testcase/helics_39bus_3.json";
+  helics::ValueFederate fed(configFile);
 	helics::Publication pub;
 	helics::Input sub;
 	double helics_requestTime = 0.0;
@@ -487,7 +495,7 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
 	
     for(int i = 0; i < subCount; i++) {
         sub = fed.getInput(i);
-        string subInfo = sub.getInfo();
+        string subInfo = sub.getInfo(); printf("----------------leizheng debug, subInfo: %s", subInfo);
         // do stuff to tie pub to GridPACK object property
     }
          
@@ -663,15 +671,15 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
 	
 	std::vector <double> vwideareafreqs;
 	vwideareafreqs = p_factory->grabWideAreaFreq();
-	//printf("-----!!renke debug dsf_app_module.cpp: grabWideAreaFreq: bus 30: %12.6f, bus 30: %12.6f, delta_freq bus34-bus30: %12.6f \n", 
-	//		vwideareafreqs[0], vwideareafreqs[1], vwideareafreqs[2]);
+	printf("-----!!renke debug dsf_app_module.cpp: grabWideAreaFreq: bus 30: %12.6f, bus 30: %12.6f, delta_freq bus34-bus30: %12.6f \n", 
+			vwideareafreqs[0], vwideareafreqs[1], vwideareafreqs[2]);
 	int tmp = vwideareafreqs.size();
 	double widearea_deltafreq = vwideareafreqs[tmp-1];
 
 #ifdef USE_HELICS
 	 
 	 //pub.publish(widearea_deltafreq);
-	 for(int i = 0; i < pubCount; i++) {
+	 for(int i = 0; i < pubCount - 1; i++) {
             pub = fed.getPublication(i);
             string pubInfo = pub.getInfo();
 			//std::cout << "-------------!!!helics test: HELICS pub info: " << pubInfo << std::endl;
@@ -680,20 +688,20 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
           }
 
 	 helics_requestTime =       double (I_Steps*h_sol1);
-	 //printf("-------------!!!Helics request time: %12.6f \n", helics_requestTime); 
+	 printf("-------------!!!Helics request time: %12.6f \n", helics_requestTime); 
 	 double helics_grantime;
 	 helics_grantime = fed.requestTime(helics_requestTime);
-	 //printf("-------------!!!Helics grant time: %12.6f \n", helics_grantime); 
+	 printf("-------------!!!Helics grant time: %12.6f \n", helics_grantime); 
 	 
 	 double subvalue = 0.0;
 	 
 	 for(int i = 0; i < subCount; i++) {
         sub = fed.getInput(i);
-		//printf("-------------!!!helics debug entering  sub loop\n"); 
+		printf("-------------!!!helics debug entering  sub loop\n"); 
 		//if(sub.isUpdated()) {
             //auto value = sub.getValue();
 			subvalue = fed.getDouble(sub);
-			//printf("-------------!!!Helics sub value: %12.6f \n", subvalue);
+			printf("-------------!!!Helics sub value: %12.6f \n", subvalue);
                              //update GridPACK object property with value
         //}
 
@@ -710,7 +718,10 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
 	p_factory->setWideAreaFreqforPSS(widearea_deltafreq);
 	 
 #endif
-		
+	
+	
+	//p_factory->setWideAreaFreqforPSS(widearea_deltafreq);
+	
     timer->stop(t_volt);
 	
 	//printf("before update relay, after first volt solv: \n");
@@ -1111,8 +1122,49 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
 #endif
   timer->stop(t_solve);
   //timer->dump();
-  
+    
 #ifdef USE_HELICS
+
+	// if use HELICS, grab all the state values of the generator
+	//---------------grab all the states-------------------------
+	std::vector<std::vector<double> > all_series;
+	all_series = getGeneratorTimeSeries();
+	std::vector<int> gen_idx = getTimeSeriesMap();
+	std::vector<double> t(all_series.back().size());
+	double t0 = 0.0;
+	std::generate(t.begin(), t.end(), [=]() mutable { return t0 += h_sol2; });
+	
+	int nseriessize = all_series.size();
+	int oneserielen = all_series[0].size();
+	int itmp, jtmp;
+	std::string strtmp;
+	
+	//-------------testing and output the collecte state time series
+	printf ("\n--------------------!!!!output generate states start here--------------------\n");
+	for (itmp = 0; itmp<nseriessize; itmp++){
+		oneserielen = all_series[itmp].size();
+		for(jtmp = 0; jtmp<oneserielen; jtmp++){
+			printf (" %12.6f,  ", all_series[itmp][jtmp]);
+		}
+		printf ("\n");
+	}
+	printf ("\n--------------------!!!!output generate states end here--------------------\n");
+	
+	//-----  the values helics need to publish is the following vector:
+	// std::vector<double> = all_series[nseriessize-1];
+	json j;
+	j["figures"] = {{{"traces", {}}, {"title", "Generator Speed"}, {"x_label", "Time (s)"}, {"y_label", "Speed (p.u.)"}}};
+	j["figures"][0]["traces"][0]["x"] = t;
+	j["figures"][0]["traces"][0]["y"] = all_series.back();
+
+	std::string strOut = j.dump();
+
+	pub = fed.getPublication(pubCount - 1);
+	pub.publish(strOut);
+
+//	std::ofstream fout("results.json");
+	//fout << std::setw(2) << j << std::endl;
+	//fout.close();
 
 	fed.finalize();
 	
