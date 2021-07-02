@@ -63,14 +63,30 @@ void gridpack::hello_world::HWApp::execute(int argc, char** argv)
   gridpack::hello_world::HWFactory factory(network);
   factory.load();
 
+  // leizheng debug:
+  // std::cout << "network" << network->totalBuses() << std::endl;
+  int nBus = network->numBuses();
+  std::cout << "nBus: " << nBus << std::endl;
+
+  int outnodeIndex = 6; //use node 0 to transfer data
+  for(int i = 0; i < nBus; i++){
+    // std::cout << "Global Index:"<<network->getGlobalBusIndex(i) << std::endl;
+    if(network->getGlobalBusIndex(i) == outnodeIndex){
+      //do helics here.
+      std::cout << "*****Do helics****" << std::endl;
+    }
+  }
+
+  // BusPtr zero_bus = network->getBus(0);
+
   // Create serial IO object to export data from buses
   gridpack::serial_io::SerialBusIO<HWNetwork> busIO(128,network);
-  busIO.header("\nMessage from buses\n");
-  busIO.write();
+  // busIO.header("\nMessage from buses\n");
+  // busIO.write();
 
 
   // Create serial IO object to export data from branches
   gridpack::serial_io::SerialBranchIO<HWNetwork> branchIO(128,network);
-  branchIO.header("\nMessage from branches\n");
-  branchIO.write();
+  // branchIO.header("\nMessage from branches\n");
+  // branchIO.write();
 }
