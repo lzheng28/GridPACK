@@ -255,6 +255,9 @@ void gridpack::dynamic_simulation::DSFullApp::reload()
 void gridpack::dynamic_simulation::DSFullApp::solve(
     gridpack::dynamic_simulation::DSFullBranch::Event fault)
 {
+  int world_rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
+
   gridpack::utility::CoarseTimer *timer =
     gridpack::utility::CoarseTimer::instance();
   int t_solve = timer->createCategory("DS Solve: Total");
@@ -467,40 +470,68 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
 #endif
   // Save initial time step
   //saveTimeStep();
- 
-	
- 
+
 #ifdef USE_HELICS
-	//std::cout << "-------------!!!helics test: HELICS Version: " << helics::versionString << std::endl;
-	cout << "-------------!!!helics test: HELICS Version: " << helics::versionString << endl;
-	string configFile = "/home/lei/Install_package/GridPACK_lzheng/src/build/applications/dynamic_simulation_full_y/testcase/helics_39bus_3.json";
-  helics::ValueFederate fed(configFile);
-	helics::Publication pub;
-	helics::Input sub;
-	double helics_requestTime = 0.0;
-	
-	//to get publication definitions
-    int pubCount = fed.getPublicationCount();
-	
-	printf("-------------helics test: num of pub: %d \n", pubCount);
-    for(int i = 0; i < pubCount; i++) {
-        pub = fed.getPublication(i);
-        string pubInfo = pub.getInfo();
-        // do stuff to tie pub to GridPACK object property
+  // std::string configFile = "/home/lei/Desktop/test-helics/federates/helics_config_1.json";
+  // helics::ValueFederate fed(configFile);
+  std::shared_ptr<helics::ValueFederate> fed;
+  helics::Publication pub;
+  helics::Input sub;
+  double helics_requestTime;
+  double helics_grantime;
+  
+  //to get publication definitions
+  int pubCount;
+  int subCount;
+
+#endif //end if of HELICS 
+
+  int nBus = p_network->numBuses();
+  int outnodeIndex = 6; //use node 6 to transfer data
+
+  std::cout << "nBus:              " << nBus << std::endl;
+
+#ifdef USE_HELICS
+
+  for(int i = 0; i < nBus; i++){
+    // std::cout << "Global Index:"<<p_network->getGlobalBusIndex(i) << std::endl;
+    if(p_network->getGlobalBusIndex(i) == outnodeIndex && p_network->getActiveBus(i)){
+
+      //std::cout << "-------------!!!helics test: HELICS Version: " << helics::versionString << std::endl;
+      cout << "-------------!!!helics test: HELICS Version: " << helics::versionString << endl;
+      // string configFile = "/home/lei/Install_package/GridPACK_lzheng/src/build/applications/dynamic_simulation_full_y/testcase/helics_39bus_3.json";
+      string configFile = "/home/lei/Desktop/test-helics/federates/helics_config_1.json";
+
+      // helics::ValueFederate fed(configFile);
+      // helics::Publication pub;
+      // helics::Input sub;
+      // double helics_requestTime = 0.0;
+      fed = std::make_shared<helics::ValueFederate>(configFile);
+      
+      //to get publication definitions
+      pubCount = (*fed).getPublicationCount();
+      
+      printf("-------------helics test: num of pub: %d \n", pubCount);
+      for(int i = 0; i < pubCount; i++) {
+          pub = (*fed).getPublication(i);
+          string pubInfo = pub.getInfo();
+          // do stuff to tie pub to GridPACK object property
+      }
+
+      //to get subscription definitions
+      subCount = (*fed).getInputCount();
+      printf("-------------helics test: num of sub: %d \n", subCount);
+      
+        for(int i = 0; i < subCount; i++) {
+            sub = (*fed).getInput(i);
+            // string subInfo = sub.getInfo(); printf("----------------leizheng debug, subInfo: %s", subInfo);
+            // do stuff to tie pub to GridPACK object property
+        }
+            
+      //let helics broker know you are ready to start simulation 
+      (*fed).enterExecutingMode();	
     }
-    
-	//to get subscription definitions
-    int subCount = fed.getInputCount();
-	printf("-------------helics test: num of sub: %d \n", subCount);
-	
-    for(int i = 0; i < subCount; i++) {
-        sub = fed.getInput(i);
-        string subInfo = sub.getInfo(); printf("----------------leizheng debug, subInfo: %s", subInfo);
-        // do stuff to tie pub to GridPACK object property
-    }
-         
-	//let helics broker know you are ready to start simulation 
-	fed.enterExecutingMode();	
+  }
 
 #endif  //end if of HELICS
 
@@ -677,41 +708,54 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
 	double widearea_deltafreq = vwideareafreqs[tmp-1];
 
 #ifdef USE_HELICS
+
+  for(int i = 0; i < nBus; i++){ // for each processor, do
+    // std::cout << "Global Index:"<<p_network->getGlobalBusIndex(i) << std::endl;
+    if(p_network->getGlobalBusIndex(i) == outnodeIndex && p_network->getActiveBus(i)){
+        //do helics here.
+        std::cout << "*****Do helics receive&send ****" <<  outnodeIndex << std::endl;
 	 
 	 //pub.publish(widearea_deltafreq);
-	 for(int i = 0; i < pubCount - 1; i++) {
-            pub = fed.getPublication(i);
+	 for(int i = 0; i < pubCount; i++) {
+            pub = (*fed).getPublication(i);
             string pubInfo = pub.getInfo();
 			//std::cout << "-------------!!!helics test: HELICS pub info: " << pubInfo << std::endl;
-			pub.publish(vwideareafreqs[i]);
+			// pub.publish(vwideareafreqs[i]);
+      std::complex<double> pub_info {1, 1};
+      pub.publish(pub_info);
+      std::cout << "I_Steps" << I_Steps << std::endl;
             // do stuff to tie pub to GridPACK object property
           }
 
-	 helics_requestTime =       double (I_Steps*h_sol1);
+	 helics_requestTime = double (I_Steps*h_sol1);
 	 printf("-------------!!!Helics request time: %12.6f \n", helics_requestTime); 
 	 double helics_grantime;
-	 helics_grantime = fed.requestTime(helics_requestTime);
-	 printf("-------------!!!Helics grant time: %12.6f \n", helics_grantime); 
+	 helics_grantime = (*fed).requestTime(helics_requestTime);
+	//  printf("-------------!!!Helics grant time: %12.6f \n", helics_grantime); 
 	 
-	 double subvalue = 0.0;
+	//  double subvalue = 0.0;
+  std::complex<double> subvalue {0, 0};
 	 
 	 for(int i = 0; i < subCount; i++) {
-        sub = fed.getInput(i);
-		printf("-------------!!!helics debug entering  sub loop\n"); 
+        sub = (*fed).getInput(i);
+		// printf("-------------!!!helics debug entering  sub loop\n"); 
 		//if(sub.isUpdated()) {
             //auto value = sub.getValue();
-			subvalue = fed.getDouble(sub);
-			printf("-------------!!!Helics sub value: %12.6f \n", subvalue);
+			// subvalue = (*fed).getDouble(sub);
+      sub.getValue(subvalue);
+      std::cout << "fed 1 subvalue:  " << subvalue << std::endl;
+			// printf("-------------!!!Helics sub value: %12.6f \n", subvalue);
                              //update GridPACK object property with value
         //}
-
 	 }
 	 
 	//printf("-------------!!!Outside Helics def sub value: %12.6f \n", subvalue);
 	 
-	p_factory->setWideAreaFreqforPSS(subvalue);
+	p_factory->setWideAreaFreqforPSS(double(subvalue.real()));
 
 	//p_factory->setWideAreaFreqforPSS(widearea_deltafreq);
+    }
+  }
 	 
 #else	 
 	 
@@ -1116,61 +1160,83 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
   if (p_insecureAt == -1) sprintf(secureBuf,"\nThe system is secure!\n");
   else sprintf(secureBuf,"\nThe system is insecure from step %d!\n", p_insecureAt);
   p_busIO->header(secureBuf);
-
+std::cout << "world_rank  " << world_rank << "  line: 1163" << std::endl;
 #ifdef MAP_PROFILE
-  timer->configTimer(true);
+  timer->configTimer(true); std::cout << "world_rank  " << world_rank << "  line: 1165" << std::endl;
 #endif
-  timer->stop(t_solve);
+  timer->stop(t_solve); std::cout << "world_rank  " << world_rank << "  line: 1167" << std::endl;
   //timer->dump();
+
+  std::cout << "world_rank  " << world_rank << "  line: 1170" << std::endl;
     
 #ifdef USE_HELICS
 
-	// if use HELICS, grab all the state values of the generator
-	//---------------grab all the states-------------------------
-	std::vector<std::vector<double> > all_series;
-	all_series = getGeneratorTimeSeries();
-	std::vector<int> gen_idx = getTimeSeriesMap();
-	std::vector<double> t(all_series.back().size());
-	double t0 = 0.0;
-	std::generate(t.begin(), t.end(), [=]() mutable { return t0 += h_sol2; });
-	
-	int nseriessize = all_series.size();
-	int oneserielen = all_series[0].size();
-	int itmp, jtmp;
-	std::string strtmp;
-	
-	//-------------testing and output the collecte state time series
-	printf ("\n--------------------!!!!output generate states start here--------------------\n");
-	for (itmp = 0; itmp<nseriessize; itmp++){
-		oneserielen = all_series[itmp].size();
-		for(jtmp = 0; jtmp<oneserielen; jtmp++){
-			printf (" %12.6f,  ", all_series[itmp][jtmp]);
-		}
-		printf ("\n");
-	}
-	printf ("\n--------------------!!!!output generate states end here--------------------\n");
-	
-	//-----  the values helics need to publish is the following vector:
-	// std::vector<double> = all_series[nseriessize-1];
-	json j;
-	j["figures"] = {{{"traces", {}}, {"title", "Generator Speed"}, {"x_label", "Time (s)"}, {"y_label", "Speed (p.u.)"}}};
-	j["figures"][0]["traces"][0]["x"] = t;
-	j["figures"][0]["traces"][0]["y"] = all_series.back();
+  if(p_time_series.size() != 0){
+      // if use HELICS, grab all the state values of the generator
+      //---------------grab all the states-------------------------
+      std::vector<std::vector<double> > all_series; std::cout << "world_rank  " << world_rank << "  line: 1179" << std::endl;
+      all_series = getGeneratorTimeSeries(); std::cout << "world_rank  " << world_rank << "  line: 1180" << std::endl;
+      std::vector<int> gen_idx = getTimeSeriesMap(); std::cout << "world_rank  " << world_rank << "  line: 1181" << std::endl;
+      std::cout << "all_series.size(): " << all_series.size() << std::endl; std::cout << "world_rank  " << world_rank << "  line: 1182" << std::endl;
+      std::cout << "all_series[0].size(): " << all_series[0].size() << std::endl; std::cout << "world_rank  " << world_rank << "  line: 1183" << std::endl;
+      for(int i = 0; i < all_series.size(); i++){
+        for(int j = 0; j < all_series[i].size(); j++){
+          std::cout << "all_series " << i << " " << j << " " << all_series[i][j];
+        }
+        std::cout << "" << std::endl;
+      }
+      std::cout << "all_series.back().size(): " << all_series.back().size() << std::endl;std::cout << "world_rank  " << world_rank << "  line: 1188" << std::endl;
+      std::vector<double> t(all_series.back().size()); std::cout << "world_rank  " << world_rank << "  line: 1182" << std::endl;
+      double t0 = 0.0; std::cout << "world_rank  " << world_rank << "  line: 1183" << std::endl;
+      std::generate(t.begin(), t.end(), [=]() mutable { return t0 += h_sol2; }); std::cout << "world_rank  " << world_rank << "  line: 1184" << std::endl;
 
-	std::string strOut = j.dump();
+      std::cout << "world_rank  " << world_rank << "  line: 1186" << std::endl;
+      
+      int nseriessize = all_series.size();
+      int oneserielen = all_series[0].size();
+      int itmp, jtmp;
+      std::string strtmp;
+      std::cout << "world_rank  " << world_rank << "  line: 1192" << std::endl;
+      //-------------testing and output the collecte state time series
+      printf ("\n--------------------!!!!output generate states start here--------------------\n");
+      for (itmp = 0; itmp<nseriessize; itmp++){
+        oneserielen = all_series[itmp].size();
+        for(jtmp = 0; jtmp<oneserielen; jtmp++){
+          printf (" %12.6f,  ", all_series[itmp][jtmp]);
+        }
+        printf ("\n");
+      }
+      printf ("\n--------------------!!!!output generate states end here--------------------\n");
+      
+      std::cout << "world_rank  " << world_rank << "  line: 1204" << std::endl;
 
-	pub = fed.getPublication(pubCount - 1);
-	pub.publish(strOut);
+      // //-----  the values helics need to publish is the following vector:
+      // // std::vector<double> = all_series[nseriessize-1];
+      // json j;
+      // j["figures"] = {{{"traces", {}}, {"title", "Generator Speed"}, {"x_label", "Time (s)"}, {"y_label", "Speed (p.u.)"}}};
+      // j["figures"][0]["traces"][0]["x"] = t;
+      // j["figures"][0]["traces"][0]["y"] = all_series.back();
 
-//	std::ofstream fout("results.json");
-	//fout << std::setw(2) << j << std::endl;
-	//fout.close();
+      // std::string strOut = j.dump();
 
-	fed.finalize();
+      // pub = (*fed).getPublication(pubCount - 1);
+      // pub.publish(strOut);
+
+    //	std::ofstream fout("results.json");
+      //fout << std::setw(2) << j << std::endl;
+      //fout.close();
+  }
+  for(int i = 0; i < nBus; i++){ // for each processor, do
+  // std::cout << "Global Index:"<<p_network->getGlobalBusIndex(i) << std::endl;
+    if(p_network->getGlobalBusIndex(i) == outnodeIndex && p_network->getActiveBus(i)){
+      (*fed).finalize();
+    }
+  }
 	
 #endif
+
+std::cout << "world_rank  " << world_rank << "  line: 1224" << std::endl;
  
-  
 }
 
 /**
@@ -1456,8 +1522,10 @@ void gridpack::dynamic_simulation::DSFullApp::getListWatchedGenerators(
 std::vector<std::vector<double> > gridpack::dynamic_simulation::DSFullApp::getGeneratorTimeSeries()
 {
   std::vector<std::vector<double> > ret;
+  int world_rank; MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
+  std::cout << "p_save_time_series: " << p_save_time_series << std::endl; std::cout << "world_rank  " << world_rank << "  line: 1525" << std::endl;
   if (p_save_time_series) {
-    int ngen = p_time_series.size();
+    int ngen = p_time_series.size(); std::cout << "p_time_series.size() " << p_time_series.size() << std::endl;
     int i, j;
     for (i=0; i<ngen; i++) {
       std::vector<double> series;

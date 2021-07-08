@@ -457,6 +457,7 @@ class SerialBusIO {
   void write(std::ostream & out, const char *signal = NULL)
   {
     int nBus = p_network->numBuses();
+    std::cout << "nBus: " << nBus << std::endl;
     char *string;
     int nwrites = 0;
     int i;
@@ -471,6 +472,8 @@ class SerialBusIO {
       }
     }
     free(string);
+
+
 
     // Set up buffers to scatter strings to global buffer
     int *iptr;

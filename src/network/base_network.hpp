@@ -441,6 +441,7 @@ int totalBuses(void)
   char plus[2];
   strcpy(plus,"+");
   GA_Pgroup_igop(grp,&total,1,plus);
+  // std::cout << "leizheng debug-" << "plus[0]:"<< plus[0] << "  plus[1]:" << plus[1] << std::endl;
   return total;
 }
 

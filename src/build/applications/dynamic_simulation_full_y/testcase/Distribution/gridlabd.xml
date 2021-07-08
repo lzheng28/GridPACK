@@ -17,7 +17,7 @@
 	<verbose>FALSE</verbose>
 	<iteration_limit>100</iteration_limit>
 	<federation_reiteration>FALSE</federation_reiteration>
-	<workdir>/home/lei/Install_package/GridPACK_lei/src/build/applications/dynamic_simulation_full_y/testcase/Distribution</workdir>
+	<workdir>/home/lei/Install_package/GridPACK_lzheng/src/build/applications/dynamic_simulation_full_y/testcase/Distribution</workdir>
 	<lock>TRUE</lock>
 	<dumpfile>gridlabd.xml</dumpfile>
 	<savefile>""</savefile>
@@ -53,7 +53,7 @@
 	<skipsafe>FALSE</skipsafe>
 	<dateformat>ISO</dateformat>
 	<init_sequence>DEFERRED</init_sequence>
-	<minimum_timestep>0</minimum_timestep>
+	<minimum_timestep>60</minimum_timestep>
 	<platform>LINUX</platform>
 	<suppress_repeat_messages>TRUE</suppress_repeat_messages>
 	<maximum_synctime>60</maximum_synctime>

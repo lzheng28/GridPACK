@@ -68,6 +68,11 @@ main(int argc, char **argv)
   // Initialize MPI libraries
   int ierr = MPI_Init(&argc, &argv);
 
+  int world_rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
+
+  std::cout << "world_rank" << world_rank << std::endl;
+
   GA_Initialize();
   int stack = 200000, heap = 200000;
   MA_init(C_DBL, stack, heap);
@@ -144,6 +149,9 @@ main(int argc, char **argv)
     //printf("Step	time:	bus_id	mac_ang_s1	mac_spd_s1\n");
     //printf("ds_app.solve:\n");
     ds_app.solve(faults[0]);
+
+    std::cout << "world_rank" << world_rank << std::endl;
+    
     //ds_app.write();
     timer->stop(t_total);
     timer->dump();
@@ -153,6 +161,9 @@ main(int argc, char **argv)
 
   // Terminate Math libraries
   gridpack::math::Finalize();
+
+  std::cout << "world_rank" << world_rank << std::endl;
+
   // Clean up MPI libraries
   ierr = MPI_Finalize();
 }

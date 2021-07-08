@@ -31,6 +31,15 @@ if (GA_FOUND)
   include_directories(AFTER ${GA_INCLUDE_DIRS})
 endif()
 
+if (HELICS_INSTALL_DIR)
+  set(target_libraries
+      ${target_libraries}
+      ${JSON_LIBRARY}
+      ${ZEROMQ_LIBRARY}
+      ${SODIUM_LIBRARY}
+      ${HELICS_LIBRARY})
+endif()
+
 add_executable(hello_world.x
    hw_app.cpp
    hw_components.cpp

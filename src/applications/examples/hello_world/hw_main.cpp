@@ -16,6 +16,8 @@
 #include "gridpack/include/gridpack.hpp"
 #include "hw_app.hpp"
 
+#include <helics/helics.hpp>
+
 // Calling program for the hello_world applications
 
 int
