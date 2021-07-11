@@ -737,6 +737,8 @@ void gridpack::dynamic_simulation::DSFullBus::load(
 
   std::string snewbustype; //renke add
 
+  // printf("DSFullBus::load(), Bus No.: %d \n", getOriginalIndex());
+
   p_sbase = 100.0;
 
   // check whether the bus is the ones extended by composite load models,

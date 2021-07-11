@@ -253,6 +253,9 @@ void gridpack::dynamic_simulation::DSFullApp::reload()
 void gridpack::dynamic_simulation::DSFullApp::solve(
     gridpack::dynamic_simulation::Event fault)
 {
+  int world_rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
+
   gridpack::utility::CoarseTimer *timer =
     gridpack::utility::CoarseTimer::instance();
   int t_solve = timer->createCategory("DS Solve: Total");
@@ -470,36 +473,58 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
  
 #ifdef USE_HELICS
 	//std::cout << "-------------!!!helics test: HELICS Version: " << helics::versionString << std::endl;
+  std::shared_ptr<helics::ValueFederate> fed;
+  helics::Publication pub;
+  helics::Input sub;
+  double helics_requestTime;
+  double helics_grantime;
+  double subvalue = 1.0;
+  
+  //to get publication definitions
+  int pubCount;
+  int subCount;
+
+  int nBus = p_network->numBuses();
+  int outnodeIndex = 1; //use node 6 to transfer data
+
+  std::cout << "nBus:              " << nBus << std::endl;
+
+  for(int i = 0; i < nBus; i++){
+    if(p_network->getGlobalBusIndex(i) == outnodeIndex && p_network->getActiveBus(i)){
+
 	cout << "-------------!!!helics test: HELICS Version: " << helics::versionString << endl;
-	string configFile = "/home/huan495/gridpack-dev/src/build/applications/dynamic_simulation_full_y/testcase/helics_39bus_3.json";
-    helics::ValueFederate fed(configFile);
-	helics::Publication pub;
-	helics::Input sub;
-	double helics_requestTime = 0.0;
+  string configFile = "/home/lei/Desktop/test-helics/federates/helics_config_1.json";
+	// string configFile = "/home/huan495/gridpack-dev/src/build/applications/dynamic_simulation_full_y/testcase/helics_39bus_3.json";
+  //   helics::ValueFederate fed(configFile);
+	// helics::Publication pub;
+	// helics::Input sub;
+	// double helics_requestTime = 0.0;
 	
 	//to get publication definitions
-    int pubCount = fed.getPublicationCount();
+  fed = std::make_shared<helics::ValueFederate>(configFile);
+  pubCount = (*fed).getPublicationCount();
 	
 	printf("-------------helics test: num of pub: %d \n", pubCount);
-    for(int i = 0; i < pubCount; i++) {
-        pub = fed.getPublication(i);
+    for(int j = 0; j < pubCount; j++) {
+        pub = (*fed).getPublication(j);
         string pubInfo = pub.getInfo();
         // do stuff to tie pub to GridPACK object property
     }
     
 	//to get subscription definitions
-    int subCount = fed.getInputCount();
+    subCount = (*fed).getInputCount();
 	printf("-------------helics test: num of sub: %d \n", subCount);
 	
-    for(int i = 0; i < subCount; i++) {
-        sub = fed.getInput(i);
+    for(int j = 0; j < subCount; j++) {
+        sub = (*fed).getInput(j);
         string subInfo = sub.getInfo();
         // do stuff to tie pub to GridPACK object property
     }
-         
-	//let helics broker know you are ready to start simulation 
-	fed.enterExecutingMode();	
 
+	//let helics broker know you are ready to start simulation 
+	(*fed).enterExecutingMode();	
+    }
+  }
 #endif  //end if of HELICS
 
 
@@ -675,38 +700,50 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
 	double widearea_deltafreq = vwideareafreqs[tmp-1];
 
 #ifdef USE_HELICS
-	 
+
+	 for(int i = 0; i < nBus; i++){
+     if(p_network->getGlobalBusIndex(i) == outnodeIndex && p_network->getActiveBus(i)){
 	 //pub.publish(widearea_deltafreq);
-	 for(int i = 0; i < pubCount; i++) {
-            pub = fed.getPublication(i);
+   std::cout << "Receive&send helics info" << std::endl;
+	 for(int j = 0; j < pubCount; j++) {
+            pub = (*fed).getPublication(j);
             string pubInfo = pub.getInfo();
 			//std::cout << "-------------!!!helics test: HELICS pub info: " << pubInfo << std::endl;
-			pub.publish(vwideareafreqs[i]);
+			// pub.publish(widearea_deltafreq);
+      pub.publish(2.0);
             // do stuff to tie pub to GridPACK object property
           }
 
-	 helics_requestTime =       double (I_Steps*h_sol1);
-	 //printf("-------------!!!Helics request time: %12.6f \n", helics_requestTime); 
-	 double helics_grantime;
-	 helics_grantime = fed.requestTime(helics_requestTime);
-	 //printf("-------------!!!Helics grant time: %12.6f \n", helics_grantime); 
+	 helics_requestTime = double (I_Steps*h_sol1);
+	 printf("-------------!!!Helics request time: %12.6f \n", helics_requestTime); 
+	//  double helics_grantime;
+	 helics_grantime = (*fed).requestTime(helics_requestTime);
+	//  printf("-------------!!!Helics grant time: %12.6f \n", helics_grantime); 
 	 
-	 double subvalue = 0.0;
+	 subvalue = 1.0;
 	 
-	 for(int i = 0; i < subCount; i++) {
-        sub = fed.getInput(i);
+	 for(int j = 0; j < subCount; j++) {
+        sub = (*fed).getInput(j);
 		//printf("-------------!!!helics debug entering  sub loop\n"); 
 		//if(sub.isUpdated()) {
             //auto value = sub.getValue();
-			subvalue = fed.getDouble(sub);
-			//printf("-------------!!!Helics sub value: %12.6f \n", subvalue);
+			subvalue = (*fed).getDouble(sub);
+      std::cout << "subvalue:" << subvalue << std::endl; std::cout << "line:731" << " world rank: "<< world_rank << std::endl;
+			// printf("-------------!!!Helics sub value: %12.6f \n", subvalue);
                              //update GridPACK object property with value
         //}
 
 	 }
 	 
 	//printf("-------------!!!Outside Helics def sub value: %12.6f \n", subvalue);
-	 
+       }
+   }
+	
+  //broadcast received subvalue
+  MPI_Bcast(&subvalue, 1, MPI_DOUBLE, 1, MPI_COMM_WORLD); //Can only run 2 processors
+
+  std::cout << "line: 745, subvalue: " << subvalue <<std::endl;
+
 	p_factory->setWideAreaFreqforPSS(subvalue);
 
 	//p_factory->setWideAreaFreqforPSS(widearea_deltafreq);
@@ -1147,9 +1184,11 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
   //timer->dump();
   
 #ifdef USE_HELICS
-
-	fed.finalize();
-	
+for(int i = 0; i < nBus; i++){
+    if(p_network->getGlobalBusIndex(i) == outnodeIndex && p_network->getActiveBus(i)){
+	(*fed).finalize();
+    }
+}
 #endif
  
   
@@ -1274,8 +1313,8 @@ void gridpack::dynamic_simulation::DSFullApp::setGeneratorWatch(
 {
   int ncnt = buses.size();
   if (ncnt != tags.size()) {
-    printf("setGeneratorWatch: size mismatch between buses: and tags: vectors\n",
-        (int)buses.size(),(int)tags.size());
+    // printf("setGeneratorWatch: size mismatch between buses: and tags: vectors\n",
+    //     (int)buses.size(),(int)tags.size());
     // TODO: some kind of error
   }
   gridpack::utility::Configuration::CursorPtr cursor;
