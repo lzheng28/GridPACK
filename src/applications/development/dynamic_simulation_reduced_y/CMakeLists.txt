@@ -37,6 +37,15 @@ if (GOSS_DIR)
       ${APR_LIBRARY})
 endif()
 
+if (HELICS_INSTALL_DIR)
+  set(target_libraries
+      ${target_libraries}
+      ${JSON_LIBRARY}
+      ${ZEROMQ_LIBRARY}
+      ${SODIUM_LIBRARY}
+      ${HELICS_LIBRARY})
+endif()
+
 set (target_libraries
     ${target_libraries}
     ${PARMETIS_LIBRARY} ${METIS_LIBRARY} 

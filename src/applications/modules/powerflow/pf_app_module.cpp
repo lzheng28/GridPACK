@@ -27,6 +27,12 @@
 #include "gridpack/math/math.hpp"
 #include "pf_helper.hpp"
 
+#ifdef USE_HELICS
+//#include "helics/ValueFederates.hpp"
+//#include <helics/shared_api_library/ValueFederate.h>
+#include <helics/helics.hpp>
+#endif
+
 #define USE_REAL_VALUES
 
 /**
@@ -240,174 +246,230 @@ bool gridpack::powerflow::PFAppModule::solve()
   int iter = 0;
   bool repeat = true;
   int int_repeat = 0;
-  while (repeat) {
-    iter = 0;
-    tol = 2.0*p_tolerance;
-    int_repeat ++;
-    if (!p_no_print) {
-      printf (" repeat time = %d \n", int_repeat);
-    }
 
-    // set YBus components so that you can create Y matrix
-    int t_fact = timer->createCategory("Powerflow: Factory Operations");
-    timer->start(t_fact);
-    p_factory->setYBus();
-    timer->stop(t_fact);
-
-    int t_cmap = timer->createCategory("Powerflow: Create Mappers");
-    timer->start(t_cmap);
-    p_factory->setMode(YBus); 
-
+// #ifdef USE_HELICS
 #if 0
-    gridpack::mapper::FullMatrixMap<PFNetwork> mMap(p_network);
-#endif
-    timer->stop(t_cmap);
-    int t_mmap = timer->createCategory("Powerflow: Map to Matrix");
-    timer->start(t_mmap);
-#if 0
-    gridpack::mapper::FullMatrixMap<PFNetwork> mMap(p_network);
-    boost::shared_ptr<gridpack::math::Matrix> Y = mMap.mapToMatrix();
-    p_busIO->header("\nY-matrix values\n");
-    //  Y->print();
-    Y->save("Ybus.m");
-#endif
-    timer->stop(t_mmap);
+	//std::cout << "-------------!!!helics test: HELICS Version: " << helics::versionString << std::endl;
+  std::shared_ptr<helics::ValueFederate> fed;
+  helics::Publication pub;
+  helics::Input sub;
+  double helics_requestTime;
+  double helics_grantime;
+  double subvalue = 1.0;
+  
+  //to get publication definitions
+  int pubCount;
+  int subCount;
 
-    timer->start(t_fact);
-    p_factory->setMode(S_Cal);
-    timer->stop(t_fact);
-    timer->start(t_cmap);
-    gridpack::mapper::BusVectorMap<PFNetwork> vvMap(p_network);
-    timer->stop(t_cmap);
-    int t_vmap = timer->createCategory("Powerflow: Map to Vector");
+  int nBus = p_network->numBuses();
+  int outnodeIndex = 5; //use node 4 to transfer data
 
-    // make Sbus components to create S vector
-    timer->start(t_fact);
-    p_factory->setSBus();
-    timer->stop(t_fact);
-    //  p_busIO->header("\nIteration 0\n");
+  std::cout << "nBus:              " << nBus << std::endl;
 
-    // Set PQ
-    timer->start(t_cmap);
-    p_factory->setMode(RHS); 
-    gridpack::mapper::BusVectorMap<PFNetwork> vMap(p_network);
-    timer->stop(t_cmap);
-    timer->start(t_vmap);
-#ifdef USE_REAL_VALUES
-    boost::shared_ptr<gridpack::math::RealVector> PQ = vMap.mapToRealVector();
-#else
-    boost::shared_ptr<gridpack::math::Vector> PQ = vMap.mapToVector();
-#endif
-    timer->stop(t_vmap);
-    //  PQ->print();
-    timer->start(t_cmap);
-    p_factory->setMode(Jacobian);
-    gridpack::mapper::FullMatrixMap<PFNetwork> jMap(p_network);
-    timer->stop(t_cmap);
-    timer->start(t_mmap);
-#ifdef USE_REAL_VALUES
-    boost::shared_ptr<gridpack::math::RealMatrix> J = jMap.mapToRealMatrix();
-#else
-    boost::shared_ptr<gridpack::math::Matrix> J = jMap.mapToMatrix();
-#endif
-    timer->stop(t_mmap);
-    //  p_busIO->header("\nJacobian values\n");
-    //  J->print();
+  for(int i = 0; i < nBus; i++){
+    if(p_network->getGlobalBusIndex(i) == outnodeIndex && p_network->getActiveBus(i)){
 
-    // Create X vector by cloning PQ
-#ifdef USE_REAL_VALUES
-    boost::shared_ptr<gridpack::math::RealVector> X(PQ->clone());
-#else
-    boost::shared_ptr<gridpack::math::Vector> X(PQ->clone());
-#endif
-
-    gridpack::utility::Configuration::CursorPtr cursor;
-    cursor = p_config->getCursor("Configuration.Powerflow");
-    // Create linear solver
-    int t_csolv = timer->createCategory("Powerflow: Create Linear Solver");
-    timer->start(t_csolv);
-#ifdef USE_REAL_VALUES
-    gridpack::math::RealLinearSolver solver(*J);
-#else
-    gridpack::math::LinearSolver solver(*J);
-#endif
-    solver.configure(cursor);
-    timer->stop(t_csolv);
-
-    // First iteration
-    X->zero(); //might not need to do this
-    //p_busIO->header("\nCalling solver\n");
-    int t_lsolv = timer->createCategory("Powerflow: Solve Linear Equation");
-    timer->start(t_lsolv);
-    //    char dbgfile[32];
-    //    sprintf(dbgfile,"j0.bin");
-    //    J->saveBinary(dbgfile);
-    //    sprintf(dbgfile,"pq0.bin");
-    //    PQ->saveBinary(dbgfile);
-    try {
-      solver.solve(*PQ, *X);
-    } catch (const gridpack::Exception e) {
-      std::string w(e.what());
-      if (!p_no_print) {
-        printf("p[%d] hit exception: %s\n",
-            p_network->communicator().rank(),
-            w.c_str());
-        p_busIO->header("Solver failure\n\n");
+      std::cout << "-------------!!!helics test: HELICS Version: " << helics::versionString << std::endl;
+      std::string configFile = "/home/lei/Desktop/test-helics/federates/helics_config_1.json";
+      // string configFile = "/home/huan495/gridpack-dev/src/build/applications/dynamic_simulation_full_y/testcase/helics_39bus_3.json";
+      //   helics::ValueFederate fed(configFile);
+      // helics::Publication pub;
+      // helics::Input sub;
+      // double helics_requestTime = 0.0;
+      
+      //to get publication definitions
+      fed = std::make_shared<helics::ValueFederate>(configFile);
+      pubCount = (*fed).getPublicationCount();
+      
+      printf("-------------helics test: num of pub: %d \n", pubCount);
+      for(int j = 0; j < pubCount; j++) {
+        pub = (*fed).getPublication(j);
+        std::string pubInfo = pub.getInfo();
+        // do stuff to tie pub to GridPACK object property
       }
-      timer->stop(t_lsolv);
-      timer->stop(t_total);
+      
+      //to get subscription definitions
+      subCount = (*fed).getInputCount();
+      printf("-------------helics test: num of sub: %d \n", subCount);
+      
+      for(int j = 0; j < subCount; j++) {
+        sub = (*fed).getInput(j);
+        std::string subInfo = sub.getInfo();
+        // do stuff to tie pub to GridPACK object property
+      }
 
-      return false;
+      //let helics broker know you are ready to start simulation 
+      (*fed).enterExecutingMode();	
     }
-    timer->stop(t_lsolv);
-    tol = PQ->normInfinity();
+  }
+#endif  //end if of HELICS
 
-    // Create timer for map to bus
-    int t_bmap = timer->createCategory("Powerflow: Map to Bus");
-    int t_updt = timer->createCategory("Powerflow: Bus Update");
-    char ioBuf[128];
+  int simu_k = 1;
+  double h_sol1 = 0.01;
 
-    while (real(tol) > p_tolerance && iter < p_max_iteration) {
-      // Push current values in X vector back into network components
-      // Need to implement setValues method in PFBus class in order for this to
-      // work
-      timer->start(t_bmap);
-      p_factory->setMode(RHS);
-      vMap.mapToBus(X);
-      timer->stop(t_bmap);
+  double pub_info = 2.0;
 
-      // Exchange data between ghost buses (I don't think we need to exchange data
-      // between branches)
-      timer->start(t_updt);
-      //  p_factory->checkQlimViolations();
-      p_network->updateBuses();
-      timer->stop(t_updt);
+  for(int I_Steps = 0; I_Steps < simu_k; I_Steps++){
 
-      // Create new versions of Jacobian and PQ vector
-      timer->start(t_vmap);
-#ifdef USE_REAL_VALUES
-      vMap.mapToRealVector(PQ);
-#else
-      vMap.mapToVector(PQ);
+// #ifdef USE_HELICS
+#if 0
+    for(int i = 0; i < nBus; i++){
+      if(p_network->getGlobalBusIndex(i) == outnodeIndex && p_network->getActiveBus(i)){
+        //pub.publish(widearea_deltafreq);
+        std::cout << "Receive&send helics info" << std::endl;
+        for(int j = 0; j < pubCount; j++) {
+          pub = (*fed).getPublication(j);
+          std::string pubInfo = pub.getInfo();
+          //std::cout << "-------------!!!helics test: HELICS pub info: " << pubInfo << std::endl;
+          // pub.publish(widearea_deltafreq);
+          pub_info += 0.02;
+          pub.publish(pub_info);
+          // do stuff to tie pub to GridPACK object property
+        }
+
+        helics_requestTime = double (I_Steps*h_sol1);
+        printf("-------------!!!Helics request time: %12.6f \n", helics_requestTime);
+        std::cout << "I_Steps: " << I_Steps << "h_sol1: " << h_sol1 << std::endl; 
+        //  double helics_grantime;
+        helics_grantime = (*fed).requestTime(helics_requestTime);
+        //  printf("-------------!!!Helics grant time: %12.6f \n", helics_grantime); 
+        
+        // subvalue = 1.0;
+        
+        for(int j = 0; j < subCount; j++) {
+          sub = (*fed).getInput(j);
+          //printf("-------------!!!helics debug entering  sub loop\n"); 
+          //if(sub.isUpdated()) {
+                  //auto value = sub.getValue();
+          subvalue = (*fed).getDouble(sub);
+          std::cout << "subvalue:" << subvalue << std::endl; std::cout << "line:340" << " world rank: " << std::endl;
+            // printf("-------------!!!Helics sub value: %12.6f \n", subvalue);
+                                  //update GridPACK object property with value
+              //}
+        }
+        //printf("-------------!!!Outside Helics def sub value: %12.6f \n", subvalue);
+
+        gridpack::powerflow::PFBus *bus = dynamic_cast<gridpack::powerflow::PFBus*>(p_network->getBus(i).get());
+        bus->p_v = subvalue;
+        // bus->p_a = subvalue;
+      }
+    }
+#endif  //end if of HELICS
+
+    while (repeat) {
+      iter = 0;
+      tol = 2.0*p_tolerance;
+      int_repeat ++;
+      if (!p_no_print) {
+        printf (" repeat time = %d \n", int_repeat);
+      }
+
+      // set YBus components so that you can create Y matrix
+      int t_fact = timer->createCategory("Powerflow: Factory Operations");
+      timer->start(t_fact);
+      p_factory->setYBus();
+      timer->stop(t_fact);
+
+      int t_cmap = timer->createCategory("Powerflow: Create Mappers");
+      timer->start(t_cmap);
+      p_factory->setMode(YBus); 
+
+#if 0
+      gridpack::mapper::FullMatrixMap<PFNetwork> mMap(p_network);
 #endif
-      //   p_busIO->header("\nnew PQ vector at iter %d\n",iter);
-      //   PQ->print();
-      timer->stop(t_vmap);
+      timer->stop(t_cmap);
+      int t_mmap = timer->createCategory("Powerflow: Map to Matrix");
       timer->start(t_mmap);
-      p_factory->setMode(Jacobian);
-#ifdef USE_REAL_VALUES
-      jMap.mapToRealMatrix(J);
-#else
-      jMap.mapToMatrix(J);
+#if 0
+      gridpack::mapper::FullMatrixMap<PFNetwork> mMap(p_network);
+      boost::shared_ptr<gridpack::math::Matrix> Y = mMap.mapToMatrix();
+      p_busIO->header("\nY-matrix values\n");
+      //  Y->print();
+      Y->save("Ybus.m");
 #endif
       timer->stop(t_mmap);
 
+      timer->start(t_fact);
+      p_factory->setMode(S_Cal);
+      timer->stop(t_fact);
+      timer->start(t_cmap);
+      gridpack::mapper::BusVectorMap<PFNetwork> vvMap(p_network);
+      timer->stop(t_cmap);
+      int t_vmap = timer->createCategory("Powerflow: Map to Vector");
+
+      // make Sbus components to create S vector
+      timer->start(t_fact);
+      p_factory->setSBus();
+      timer->stop(t_fact);
+      //  p_busIO->header("\nIteration 0\n");
+
+      // Set PQ
+      timer->start(t_cmap);
+      p_factory->setMode(RHS); 
+      gridpack::mapper::BusVectorMap<PFNetwork> vMap(p_network);
+      timer->stop(t_cmap);
+      timer->start(t_vmap);
+#ifdef USE_REAL_VALUES
+      boost::shared_ptr<gridpack::math::RealVector> PQ = vMap.mapToRealVector();
+#else
+      boost::shared_ptr<gridpack::math::Vector> PQ = vMap.mapToVector();
+#endif
+      timer->stop(t_vmap);
+      //  PQ->print();
+      timer->start(t_cmap);
+      p_factory->setMode(Jacobian);
+      gridpack::mapper::FullMatrixMap<PFNetwork> jMap(p_network);
+      timer->stop(t_cmap);
+      timer->start(t_mmap);
+#ifdef USE_REAL_VALUES
+      boost::shared_ptr<gridpack::math::RealMatrix> J = jMap.mapToRealMatrix();
+#else
+      boost::shared_ptr<gridpack::math::Matrix> J = jMap.mapToMatrix();
+#endif
+      timer->stop(t_mmap);
+      //  p_busIO->header("\nJacobian values\n");
+      //  J->print();
+
+      // Create X vector by cloning PQ
+#ifdef USE_REAL_VALUES
+      boost::shared_ptr<gridpack::math::RealVector> X(PQ->clone());
+#else
+      boost::shared_ptr<gridpack::math::Vector> X(PQ->clone());
+#endif
+
+      gridpack::utility::Configuration::CursorPtr cursor;
+      cursor = p_config->getCursor("Configuration.Powerflow");
       // Create linear solver
-      timer->start(t_lsolv);
+      int t_csolv = timer->createCategory("Powerflow: Create Linear Solver");
+      timer->start(t_csolv);
+#ifdef USE_REAL_VALUES
+      gridpack::math::RealLinearSolver solver(*J);
+#else
+      gridpack::math::LinearSolver solver(*J);
+#endif
+      solver.configure(cursor);
+      timer->stop(t_csolv);
+
+      // First iteration
       X->zero(); //might not need to do this
-      //    sprintf(dbgfile,"j%d.bin",iter+1);
+      //p_busIO->header("\nCalling solver\n");
+      int t_lsolv = timer->createCategory("Powerflow: Solve Linear Equation");
+#if 0      
+      std::cout << "\n ====== p_busIO ========\n" << std::endl; 
+      p_busIO->write();
+
+      for(int i = 0; i < p_network->numBuses(); i++){
+        gridpack::powerflow::PFBus *bus = dynamic_cast<gridpack::powerflow::PFBus*>(p_network->getBus(i).get());
+        std::cout << "bus[" << i << "]->p_v: " << bus->getVoltage() << "    ";
+        std::cout << "bus[" << i << "]->p_vAng_ptr: " << (bus->getPhase()) * 360/(2*3.1415926) << "    ";
+        std::cout << "voltage: " << bus->getComplexVoltage() << std::endl;
+      }
+#endif
+      timer->start(t_lsolv);
+      //    char dbgfile[32];
+      //    sprintf(dbgfile,"j0.bin");
       //    J->saveBinary(dbgfile);
-      //    sprintf(dbgfile,"pq%d.bin",iter+1);
+      //    sprintf(dbgfile,"pq0.bin");
       //    PQ->saveBinary(dbgfile);
       try {
         solver.solve(*PQ, *X);
@@ -421,43 +483,129 @@ bool gridpack::powerflow::PFAppModule::solve()
         }
         timer->stop(t_lsolv);
         timer->stop(t_total);
+
         return false;
       }
       timer->stop(t_lsolv);
-
       tol = PQ->normInfinity();
-      if (!p_no_print) {
-        sprintf(ioBuf,"\nIteration %d Tol: %12.6e\n",iter+1,real(tol));
-        p_busIO->header(ioBuf);
-      }
-      iter++;
-    }
 
-    if (iter >= p_max_iteration) ret = false;
-    if (p_qlim == 0) {
-      repeat = false;
-    } else {
-      if (p_factory->checkQlimViolations()) {
-        repeat =false;
-      } else {
+      // Create timer for map to bus
+      int t_bmap = timer->createCategory("Powerflow: Map to Bus");
+      int t_updt = timer->createCategory("Powerflow: Bus Update");
+      char ioBuf[128];
+
+      while (real(tol) > p_tolerance && iter < p_max_iteration) {
+        // Push current values in X vector back into network components
+        // Need to implement setValues method in PFBus class in order for this to
+        // work
+        timer->start(t_bmap);
+        p_factory->setMode(RHS); // Set Mode
+        vMap.mapToBus(X); //The mapToBus call pushes the values from the solution back into the network buses and updates internal bus parameters.
+
+        // std::cout << "\n ====== X ========\n" << std::endl; 
+        // X->print();
+        // std::cout << "\n ====== p_busIO ========\n" << std::endl; 
+        // p_busIO->write();
+
+        // gridpack::powerflow::PFBus *bus = dynamic_cast<gridpack::powerflow::PFBus*>(p_network->getBus(1).get());
+        // std::cout << "bus[1]->p_v: " << bus->p_v << std::endl;
+        // std::cout << "bus[1]->p_a: " << bus->p_a << std::endl;
+
+        timer->stop(t_bmap);
+
+        // Exchange data between ghost buses (I don't think we need to exchange data
+        // between branches)
+        timer->start(t_updt);
+        //  p_factory->checkQlimViolations();
+        p_network->updateBuses(); // The updateBuses call distributes these updated values to the ghost buses.
+        timer->stop(t_updt);
+
+        // Create new versions of Jacobian and PQ vector
+        timer->start(t_vmap);
+#ifdef USE_REAL_VALUES
+        vMap.mapToRealVector(PQ); //Create new versions of PQ vector
+#else
+        vMap.mapToVector(PQ);
+#endif
+        //   p_busIO->header("\nnew PQ vector at iter %d\n",iter);
+        //   PQ->print();
+        timer->stop(t_vmap);
+        timer->start(t_mmap);
+        p_factory->setMode(Jacobian);
+#ifdef USE_REAL_VALUES
+        jMap.mapToRealMatrix(J); // Create new versions of Jacobian Matrix
+#else
+        jMap.mapToMatrix(J);
+#endif
+        timer->stop(t_mmap);
+
+        // Create linear solver
+        timer->start(t_lsolv);
+        X->zero(); //might not need to do this
+        //    sprintf(dbgfile,"j%d.bin",iter+1);
+        //    J->saveBinary(dbgfile);
+        //    sprintf(dbgfile,"pq%d.bin",iter+1);
+        //    PQ->saveBinary(dbgfile);
+        try {
+          solver.solve(*PQ, *X); // J * X = PQ
+        } catch (const gridpack::Exception e) {
+          std::string w(e.what());
+          if (!p_no_print) {
+            printf("p[%d] hit exception: %s\n",
+                p_network->communicator().rank(),
+                w.c_str());
+            p_busIO->header("Solver failure\n\n");
+          }
+          timer->stop(t_lsolv);
+          timer->stop(t_total);
+          return false;
+        }
+        timer->stop(t_lsolv);
+
+        tol = PQ->normInfinity();
         if (!p_no_print) {
-          printf ("There are Qlim violations at iter =%d\n", iter);
+          sprintf(ioBuf,"\nIteration %d Tol: %12.6e\n",iter+1,real(tol));
+          p_busIO->header(ioBuf);
+        }
+        iter++;
+      }
+
+      if (iter >= p_max_iteration) ret = false;
+      if (p_qlim == 0) {
+        repeat = false;
+      } else {
+        if (p_factory->checkQlimViolations()) {
+          repeat =false;
+        } else {
+          if (!p_no_print) {
+            printf ("There are Qlim violations at iter =%d\n", iter);
+          }
         }
       }
-    }
-    // Push final result back onto buses
-    timer->start(t_bmap);
-    p_factory->setMode(RHS);
-    vMap.mapToBus(X);
-    timer->stop(t_bmap);
+      // Push final result back onto buses
+      timer->start(t_bmap);
+      p_factory->setMode(RHS);
+      vMap.mapToBus(X);
+      timer->stop(t_bmap);
 
-    // Make sure that ghost buses have up-to-date values before printing out
-    // results
-    timer->start(t_updt);
-    p_network->updateBuses();
-    timer->stop(t_updt);
+      // Make sure that ghost buses have up-to-date values before printing out
+      // results
+      timer->start(t_updt);
+      p_network->updateBuses();
+      timer->stop(t_updt);
+    }
   }
-    timer->stop(t_total);
+  timer->stop(t_total);
+
+// #ifdef USE_HELICS
+#if 0
+  for(int i = 0; i < nBus; i++){
+      if(p_network->getGlobalBusIndex(i) == outnodeIndex && p_network->getActiveBus(i)){
+        (*fed).finalize();
+      }
+  }
+#endif
+
   return ret;
 
 }

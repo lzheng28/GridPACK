@@ -40,6 +40,15 @@ if (GOSS_DIR)
       ${APR_LIBRARY})
 endif()
 
+if (HELICS_INSTALL_DIR)
+  set(target_libraries
+      ${target_libraries}
+      ${JSON_LIBRARY}
+      ${ZEROMQ_LIBRARY}
+      ${SODIUM_LIBRARY}
+      ${HELICS_LIBRARY})
+endif()
+
 include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
 if (GA_FOUND)
   include_directories(AFTER ${GA_INCLUDE_DIRS})

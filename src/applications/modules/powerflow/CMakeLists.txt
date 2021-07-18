@@ -35,6 +35,12 @@ if (GA_FOUND)
   include_directories(AFTER ${GA_INCLUDE_DIRS})
 endif()
 
+if (HELICS_DIR)
+  set(target_libraries
+      ${target_libraries}
+      ${HELICS_LIBRARY})
+endif()
+
 add_library(gridpack_powerflow_module
   pf_app_module.cpp
   pf_factory_module.cpp
