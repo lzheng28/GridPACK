@@ -255,14 +255,14 @@ bool gridpack::powerflow::PFAppModule::solve()
   helics::Input sub;
   double helics_requestTime;
   double helics_grantime;
-  double subvalue = 1.0;
+  std::complex<double> subvalue = {1.0, 1.0};
   
   //to get publication definitions
   int pubCount;
   int subCount;
 
   int nBus = p_network->numBuses();
-  int outnodeIndex = 5; //use node 4 to transfer data
+  int outnodeIndex = 2 - 1; //use node 118 to transfer data
 
   std::cout << "nBus:              " << nBus << std::endl;
 
@@ -305,9 +305,9 @@ bool gridpack::powerflow::PFAppModule::solve()
 #endif  //end if of HELICS
 
   int simu_k = 1;
-  double h_sol1 = 0.01;
+  double h_sol1 = 60;
 
-  double pub_info = 2.0;
+  std::complex<double> pub_info = {2.0, 2.0};
 
   for(int I_Steps = 0; I_Steps < simu_k; I_Steps++){
 
@@ -322,8 +322,12 @@ bool gridpack::powerflow::PFAppModule::solve()
           std::string pubInfo = pub.getInfo();
           //std::cout << "-------------!!!helics test: HELICS pub info: " << pubInfo << std::endl;
           // pub.publish(widearea_deltafreq);
-          pub_info += 0.02;
-          pub.publish(pub_info);
+          gridpack::powerflow::PFBus *bus = dynamic_cast<gridpack::powerflow::PFBus*>(p_network->getBus(i).get());
+          std::complex<double> voltage_cosim {bus->getVoltage() * 138.0 * 1000, 0};
+          // std::complex<double> voltage_cosim{142300, 0};
+          std::cout << "$$$$$voltage_cosim = " << voltage_cosim << std::endl;
+          // std::complex<double> pub_info = {};
+          pub.publish(voltage_cosim);
           // do stuff to tie pub to GridPACK object property
         }
 
@@ -340,8 +344,8 @@ bool gridpack::powerflow::PFAppModule::solve()
           sub = (*fed).getInput(j);
           //printf("-------------!!!helics debug entering  sub loop\n"); 
           //if(sub.isUpdated()) {
-                  //auto value = sub.getValue();
-          subvalue = (*fed).getDouble(sub);
+          sub.getValue(subvalue);
+          // subvalue = (*fed).getDouble(sub);
           std::cout << "subvalue:" << subvalue << std::endl; std::cout << "line:340" << " world rank: " << std::endl;
             // printf("-------------!!!Helics sub value: %12.6f \n", subvalue);
                                   //update GridPACK object property with value
@@ -349,12 +353,35 @@ bool gridpack::powerflow::PFAppModule::solve()
         }
         //printf("-------------!!!Outside Helics def sub value: %12.6f \n", subvalue);
 
+        int load_amplification_factor = 15;
+
         gridpack::powerflow::PFBus *bus = dynamic_cast<gridpack::powerflow::PFBus*>(p_network->getBus(i).get());
-        bus->p_v = subvalue;
-        // bus->p_a = subvalue;
+        bus->p_pl[0] = subvalue.real() * load_amplification_factor / 1000000;
+        bus->p_ql[0] = subvalue.imag() * load_amplification_factor / 1000000;
       }
     }
 #endif  //end if of HELICS
+
+// print load
+#if 0
+    gridpack::powerflow::PFBus *bus = dynamic_cast<gridpack::powerflow::PFBus*>(p_network->getBus(1).get());
+    bus->p_pl[0] = 30;
+    bus->p_ql[0] = 30;
+    std::cout << "&&&&& bus->p_pl[0] = " << bus->p_pl[0] << "  &&&&&bus->p_ql[0] = " << bus->p_ql[0] << std::endl;
+#endif
+
+
+#if 1  
+      std::cout << "\n ====== p_busIO ========\n" << std::endl; 
+      p_busIO->write();
+
+      // for(int i = 0; i < p_network->numBuses(); i++){
+      //   gridpack::powerflow::PFBus *bus = dynamic_cast<gridpack::powerflow::PFBus*>(p_network->getBus(i).get());
+      //   std::cout << "bus[" << i << "]->p_v: " << bus->getVoltage() << "    ";
+      //   std::cout << "bus[" << i << "]->p_vAng_ptr: " << (bus->getPhase()) * 360/(2*3.1415926) << "    ";
+      //   std::cout << "voltage: " << bus->getComplexVoltage() << std::endl;
+      // }
+#endif
 
     while (repeat) {
       iter = 0;
@@ -463,6 +490,18 @@ bool gridpack::powerflow::PFAppModule::solve()
         std::cout << "bus[" << i << "]->p_v: " << bus->getVoltage() << "    ";
         std::cout << "bus[" << i << "]->p_vAng_ptr: " << (bus->getPhase()) * 360/(2*3.1415926) << "    ";
         std::cout << "voltage: " << bus->getComplexVoltage() << std::endl;
+      }
+#endif
+
+#if 1
+      std::cout << "\n ======1. p_load ========\n" << std::endl;
+      for(int i = 0; i < p_network->numBuses(); i++){
+        gridpack::powerflow::PFBus *bus = dynamic_cast<gridpack::powerflow::PFBus*>(p_network->getBus(i).get());
+        for(int j = 0; j < (bus->p_pl).size(); j++){
+          std::cout << "bus[" << i << "][" << j << "]->p_pl: " << bus->p_pl[j] << "    ";
+          std::cout << "bus[" << i << "][" << j << "]->p_ql: " << bus->p_ql[j] << "    ";
+        }
+        std::cout << "  " << std::endl;
       }
 #endif
       timer->start(t_lsolv);
@@ -594,6 +633,17 @@ bool gridpack::powerflow::PFAppModule::solve()
       p_network->updateBuses();
       timer->stop(t_updt);
     }
+#if 1
+    std::cout << "\n ======2. p_load ========\n" << std::endl;
+    for(int i = 0; i < p_network->numBuses(); i++){
+      gridpack::powerflow::PFBus *bus = dynamic_cast<gridpack::powerflow::PFBus*>(p_network->getBus(i).get());
+      for(int j = 0; j < (bus->p_pl).size(); j++){
+        std::cout << "bus[" << i << "][" << j << "]->p_pl: " << bus->p_pl[j] << "    ";
+        std::cout << "bus[" << i << "][" << j << "]->p_ql: " << bus->p_ql[j] << "    ";
+      }
+      std::cout << "  " << std::endl;
+    }
+#endif
   }
   timer->stop(t_total);
 
@@ -605,6 +655,18 @@ bool gridpack::powerflow::PFAppModule::solve()
       }
   }
 #endif
+
+// #if 1
+//     std::cout << "\n ======2. p_load ========\n" << std::endl;
+//     for(int i = 0; i < p_network->numBuses(); i++){
+//       gridpack::powerflow::PFBus *bus = dynamic_cast<gridpack::powerflow::PFBus*>(p_network->getBus(i).get());
+//       for(int j = 0; j < (bus->p_pl).size(); j++){
+//         std::cout << "bus[" << i << "][" << j << "]->p_pl: " << bus->p_pl[j] << "    ";
+//         std::cout << "bus[" << i << "][" << j << "]->p_ql: " << bus->p_ql[j] << "    ";
+//       }
+//       std::cout << "  " << std::endl;
+//     }
+// #endif
 
   return ret;
 

@@ -853,7 +853,7 @@ class PTI33_parser : public BasePTIParser<_network>
         if (nstr > 6) p_branchData[l_idx]->addValue(BRANCH_RATING_A,
             atof(split_line[6].c_str()), nelems);
 
-        // BBRANCH_RATING_        "RATEB"               float
+        // BBRANCH_RATING_B        "RATEB"               float
         if (nstr > 7) p_branchData[l_idx]->addValue(BRANCH_RATING_B,
             atof(split_line[7].c_str()), nelems);
 
