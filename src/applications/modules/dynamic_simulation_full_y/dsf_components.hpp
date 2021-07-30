@@ -56,6 +56,9 @@ class DSFullBus
 {
   public:
 
+    std::vector<double> p_powerflowload_p_save;
+    double p_pl, p_ql;
+
 #ifdef USE_FNCS
     /**
      * Data package for use with FNCS framework
@@ -110,6 +113,9 @@ class DSFullBus
     bool vectorValues(ComplexType *values);
 
     void setValues(ComplexType *values);
+
+    // Set Load for bus Lei Zheng
+    void setLoadPower(int index, double value);
 
     /**
      * Set values of YBus matrix. These can then be used in subsequent
@@ -509,7 +515,7 @@ class DSFullBus
     double p_angle, p_voltage;
 	double p_busvolfreq, pbusvolfreq_old; //renke add, bus voltage frequency at current and previous timesteps
     bool p_load;
-    double p_pl, p_ql;
+    // double p_pl, p_ql;
 	double p_loadimpedancer, p_loadimpedancei;
     double p_sbase;
     bool p_isGen;
@@ -575,7 +581,7 @@ class DSFullBus
       p_loadmodels;
 	
     std::vector<double> p_powerflowload_p;	
-    std::vector<double> p_powerflowload_p_save;	
+    // std::vector<double> p_powerflowload_p_save;	
 	std::vector<double> p_powerflowload_q;	
     std::vector<double> p_powerflowload_q_save;	
    std::vector<int> p_powerflowload_status;

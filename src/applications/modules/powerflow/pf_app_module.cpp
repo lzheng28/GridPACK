@@ -371,7 +371,7 @@ bool gridpack::powerflow::PFAppModule::solve()
 #endif
 
 
-#if 1  
+#if 0  
       std::cout << "\n ====== p_busIO ========\n" << std::endl; 
       p_busIO->write();
 
@@ -493,7 +493,7 @@ bool gridpack::powerflow::PFAppModule::solve()
       }
 #endif
 
-#if 1
+#if 0
       std::cout << "\n ======1. p_load ========\n" << std::endl;
       for(int i = 0; i < p_network->numBuses(); i++){
         gridpack::powerflow::PFBus *bus = dynamic_cast<gridpack::powerflow::PFBus*>(p_network->getBus(i).get());
@@ -633,7 +633,7 @@ bool gridpack::powerflow::PFAppModule::solve()
       p_network->updateBuses();
       timer->stop(t_updt);
     }
-#if 1
+#if 0
     std::cout << "\n ======2. p_load ========\n" << std::endl;
     for(int i = 0; i < p_network->numBuses(); i++){
       gridpack::powerflow::PFBus *bus = dynamic_cast<gridpack::powerflow::PFBus*>(p_network->getBus(i).get());

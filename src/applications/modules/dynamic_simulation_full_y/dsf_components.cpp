@@ -671,6 +671,7 @@ void gridpack::dynamic_simulation::DSFullBus::setVolt(bool flag)
 //		  }
 //	  }
       p_generators[i]->setVoltage(p_volt_full);
+      // std::cout << "setVolt ngen " << "p_generators[" << i << "]" << p_volt_full << std::endl;
       if (flag) {
         //if (getOriginalIndex() == 6433) printf("bus id = %d: values[0] = %f, %f, mag = %f\n", getOriginalIndex(), p_volt_full, abs(p_volt_full)); // bpa 
         //if (getOriginalIndex() == 6) printf("bus id = %d: values[0] = %f, %f, mag = %f\n", getOriginalIndex(), p_volt_full, abs(p_volt_full)); // 179
@@ -678,7 +679,11 @@ void gridpack::dynamic_simulation::DSFullBus::setVolt(bool flag)
 #endif
     }
   }
-  
+  // std::cout << "p_ndyn_load " << p_ndyn_load << std::endl;
+  // std::cout << "setVolt ndyn_load: " << "p_loadmodels.size()" << p_loadmodels.size() << std::endl;
+  // for(int i = 0; i < p_loadmodels.size(); i++){
+  //   std::cout << "p_loadmodels[" << i << "]" << p_loadmodels[i] << std::endl;
+  // }
   for ( int i=0; i<p_ndyn_load; i++){
 	  p_loadmodels[i]->setVoltage(p_volt_full);
   }
@@ -763,7 +768,9 @@ void gridpack::dynamic_simulation::DSFullBus::load(
   if (!data->getValue("BUS_PF_VMAG", &p_voltage)) {
     data->getValue(BUS_VOLTAGE_MAG, &p_voltage);
   }
-  //printf("p_voltage at bus %d: %f\n", getOriginalIndex(), p_voltage);
+
+  // std::cout << "****load method: " << std::endl;
+  // printf("p_voltage at bus %d: %f\n", getOriginalIndex(), p_voltage);
 
   p_area = 1;
   data->getValue(BUS_AREA, &p_area);
@@ -2427,6 +2434,13 @@ void gridpack::dynamic_simulation::DSFullBus::getLoadPower(
     ql.push_back(p_powerflowload_q_save[i]);
     status.push_back(1);
   }
+}
+
+// Lei Zheng Added
+void gridpack::dynamic_simulation::DSFullBus::setLoadPower(int index, double value)
+{
+  p_powerflowload_p_save[0] = 130;
+  p_powerflowload_q_save[0] = 130;
 }
 
 /**

@@ -134,11 +134,12 @@ int main(int argc, char **argv)
     }
 #endif  //end if of HELICS
     // double temp = 10.0;
-    int simu_k = 288;
+    int simu_k = 288; //288
     double h_sol1 = 300;
 
     std::complex<double> pub_info = {2.0, 2.0};
 
+#if 1
     // read file
     std::ifstream inFile("power_load.csv", std::ios::in);
     std::string lineStr;
@@ -148,37 +149,45 @@ int main(int argc, char **argv)
       std::stringstream ss(lineStr);
       std::string str;
       std::vector<double> lineArray;
-      // 按照逗号分隔
       while (getline(ss, str, ','))
           lineArray.push_back(atof(str.c_str()));
       strArray.push_back(lineArray);
     }
-
+#endif
     std::vector<std::complex<double>> v_voltage_cosim;
 
     for(int I_Steps = 0; I_Steps < simu_k; I_Steps++){
 
       // Set actual demand
+#if 1
       for(int k = 0; k < pf_network->numBuses(); k++){
         gridpack::powerflow::PFBus *bus = dynamic_cast<gridpack::powerflow::PFBus*>(pf_network->getBus(k).get());
 
         if((bus->p_pl).size() > 0){
-          bus->p_pl[0] = strArray[I_Steps][k];
-          bus->p_ql[0] = strArray[I_Steps][k] * tan(acos(0.85));
-          std::cout << "&&&&& bus->p_pl[0] = " << bus->p_pl[0] << "  &&&&&bus->p_ql[0] = " << bus->p_ql[0] << std::endl;
+          // bus->p_pl[0] += 0.001;
+          // bus->p_ql[0] += 0.001;
+          bus->p_pl[0] = strArray[I_Steps][pf_network->getGlobalBusIndex(k)];
+          bus->p_ql[0] = strArray[I_Steps][pf_network->getGlobalBusIndex(k)] * tan(acos(0.85));
+          // std::cout << "&&&&& bus->p_pl[0] = " << bus->p_pl[0] << "  &&&&&bus->p_ql[0] = " << bus->p_ql[0] << std::endl;
         }
       }
-//collect voltage
-#if 1
-      gridpack::powerflow::PFBus *bus = dynamic_cast<gridpack::powerflow::PFBus*>(pf_network->getBus(117).get());
-      std::complex<double> voltage_cosim {bus->getVoltage() * 138.0 * 1000, 0};
-      // std::complex<double> voltage_cosim{142300, 0};
-      std::cout << "$$$$$voltage_cosim = " << voltage_cosim << std::endl;
-      // std::complex<double> pub_info = {};
-      if(I_Steps == 0){
-        voltage_cosim *= 1.043;
+#endif
+      //collect voltage
+      std::complex<double> voltage_cosim = {0, 0};
+#if 0
+      for(int k = 0; k < pf_network->numBuses(); k++){
+        if(pf_network->getGlobalBusIndex(k) == 117 && pf_network->getActiveBus(k)){
+          gridpack::powerflow::PFBus *bus = dynamic_cast<gridpack::powerflow::PFBus*>(pf_network->getBus(k).get());
+          voltage_cosim = {bus->getVoltage() * 138.0 * 1000, 0};
+          // std::complex<double> voltage_cosim{142300, 0};
+          // std::cout << "$$$$$voltage_cosim = " << voltage_cosim << std::endl;
+          // std::complex<double> pub_info = {};
+          if(I_Steps == 0){
+            voltage_cosim *= 1.043;
+          }
+          v_voltage_cosim.push_back(voltage_cosim);
+        }
       }
-      v_voltage_cosim.push_back(voltage_cosim);
 #endif
 // #ifdef USE_HELICS
 #if 0
@@ -254,25 +263,29 @@ int main(int argc, char **argv)
       //pf_app.write();
     }
 
-#if 1
-    std::ofstream file("voltage_gp.csv");
-    if (file)
-    {
-      file << "voltage" << "\n";
-      for(int i = 0; i < v_voltage_cosim.size(); i++){
-        if(i != 0){
-          for(int j = 0; j < 5; j++){
-            file << v_voltage_cosim[i].real() << "+" << v_voltage_cosim[i].imag() << "j" << "\n";
+#if 0
+      for(int k = 0; k < pf_network->numBuses(); k++){
+        if(pf_network->getGlobalBusIndex(k) == 117 && pf_network->getActiveBus(k)){
+          std::ofstream file("voltage_gp.csv");
+          if (file)
+          {
+            file << "voltage" << "\n";
+            for(int i = 0; i < v_voltage_cosim.size(); i++){
+              if(i != 0){
+                for(int j = 0; j < 5; j++){
+                  file << v_voltage_cosim[i].real() << "+" << v_voltage_cosim[i].imag() << "j" << "\n";
+                }
+              } else {
+                file << v_voltage_cosim[i].real() << "+" << v_voltage_cosim[i].imag() << "j" << "\n";
+              }
+            }
           }
-        } else {
-          file << v_voltage_cosim[i].real() << "+" << v_voltage_cosim[i].imag() << "j" << "\n";
+          for(int i = 0; i < 4; i++){
+            file << v_voltage_cosim[v_voltage_cosim.size() - 1].real() << "+" << v_voltage_cosim[v_voltage_cosim.size() - 1].imag() << "j" << "\n";
+          }
+          file.close();
         }
       }
-    }
-    for(int i = 0; i < 4; i++){
-      file << v_voltage_cosim[v_voltage_cosim.size() - 1].real() << "+" << v_voltage_cosim[v_voltage_cosim.size() - 1].imag() << "j" << "\n";
-    }
-    file.close();
 #endif
     pf_app.write();
     pf_app.saveData();

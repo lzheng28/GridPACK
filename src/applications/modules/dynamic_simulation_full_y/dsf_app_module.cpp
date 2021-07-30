@@ -195,7 +195,7 @@ void gridpack::dynamic_simulation::DSFullApp::readGenerators(void)
   gridpack::parser::PTI23_parser<DSFullNetwork> parser(p_network);
   cursor = p_config->getCursor("Configuration.Dynamic_simulation");
   std::string filename = cursor->get("generatorParameters","");
-  printf("p[%d] generatorParameters: %s\n",p_comm.rank(),filename.c_str());
+  printf("p[%d] generator Parameters: %s\n",p_comm.rank(),filename.c_str());
   if (filename.size() > 0) parser.externalParse(filename.c_str());
   printf("p[%d] finished Generator parameters\n",p_comm.rank());
 }
@@ -220,6 +220,9 @@ void gridpack::dynamic_simulation::DSFullApp::initialize()
   // p_factory->dumpData();
   p_factory->load();
 
+  // gridpack::dynamic_simulation::DSFullBus *bus = dynamic_cast<gridpack::dynamic_simulation::DSFullBus*>(p_network->getBus(6).get());
+  // bus->setLoadPower(6, 130);
+
   // set network components using factory
   p_factory->setComponents();
   
@@ -243,7 +246,41 @@ void gridpack::dynamic_simulation::DSFullApp::initialize()
  */
 void gridpack::dynamic_simulation::DSFullApp::reload()
 {
+#if 0
+    gridpack::dynamic_simulation::DSFullBus *dsbus = dynamic_cast<gridpack::dynamic_simulation::DSFullBus*>(p_network->getBus(6).get());
+    dsbus->p_pl = 1.30;
+    dsbus->p_ql = 1.30;
+
+    gridpack::component::DataCollection *dsData;
+    dsData = p_network->getBusData(6).get();
+    double temp;
+    dsData->getValue(LOAD_PL, &temp); std::cout << "LOAD_PL: " << temp << std::endl;
+    dsData->setValue(LOAD_PL, 130);
+    dsData->getValue(LOAD_QL, &temp); std::cout << "LOAD_QL: " << temp << std::endl;
+    dsData->setValue(LOAD_QL, 130);
+#endif
+
   p_factory->load();
+#if 0
+  for(int m = 0; m < p_network->numBuses(); m++){
+    gridpack::dynamic_simulation::DSFullBus *bus = dynamic_cast<gridpack::dynamic_simulation::DSFullBus*>(p_network->getBus(m).get());
+    double *p;
+    p = new double;
+    double *q;
+    q = new double;
+    bus->getLoad(p, q);
+    std::cout << "Bus [" << m << "] load: " << *p << "  " << *q << std::endl;
+  }
+  gridpack::dynamic_simulation::DSFullBus *bus = dynamic_cast<gridpack::dynamic_simulation::DSFullBus*>(p_network->getBus(6).get());
+  double *p;
+  p = new double;
+  double *q;
+  q = new double;
+  bus->getLoad(p, q);
+
+  // bus->setLoad(*p, *q);
+  bus->setLoad(*p + 2, *q + 2);
+#endif
   p_factory->setYBus();
 }
 
@@ -277,20 +314,20 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
   timer->stop(t_mode);
   int t_ybus = timer->createCategory("DS Solve: Make YBus");
   timer->start(t_ybus);
-  gridpack::mapper::FullMatrixMap<DSFullNetwork> ybusMap(p_network);
-  boost::shared_ptr<gridpack::math::Matrix> orgYbus = ybusMap.mapToMatrix();
+  gridpack::mapper::FullMatrixMap<DSFullNetwork> ybusMap(p_network); // Line 23 creates a matrix mapper that is used to build the Jacobian for the powerflow equations
+  boost::shared_ptr<gridpack::math::Matrix> orgYbus = ybusMap.mapToMatrix(); // line 24 creates the first iteration of this matrix.
   
-  //printf("\n=== org ybus: ============\n");
-  //orgYbus->print();
-  //orgYbus->save("ybus_GridPACK_org.m");
-  //exit(0);
+  // printf("\n=== org ybus: ============\n");
+  // orgYbus->print();
+  // orgYbus->save("ybus_GridPACK_org.m");
+  // exit(0);
 
   //p_factory->addLoadAdmittance();
 
   // Form constant impedance load admittance yl for all buses and add it to
   // system Y matrix: ybus = ybus + yl
   p_factory->setMode(YL);
-  boost::shared_ptr<gridpack::math::Matrix> ybusyl = ybusMap.mapToMatrix();
+  boost::shared_ptr<gridpack::math::Matrix> ybusyl = ybusMap.mapToMatrix(); // line 24 creates the first iteration of this matrix.
   timer->stop(t_ybus);
   //branchIO.header("\n=== ybus after added yl: ============\n");
   //printf("\n=== ybus after added yl: ============\n");
@@ -299,7 +336,7 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
   //exit(0);
 
   p_factory->setMode(PG);
-  boost::shared_ptr<gridpack::math::Matrix> ybuspg = ybusMap.mapToMatrix();
+  boost::shared_ptr<gridpack::math::Matrix> ybuspg = ybusMap.mapToMatrix(); // line 24 creates the first iteration of this matrix.
   //printf("\n=== ybus after added pg: ============\n");
   //ybuspg->print();
   //exit(0);
@@ -312,7 +349,7 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
   p_factory->setMode(jxd);
   timer->stop(t_mode);
   timer->start(t_ybus);
-  boost::shared_ptr<gridpack::math::Matrix> ybus_jxd = ybusMap.mapToMatrix();
+  boost::shared_ptr<gridpack::math::Matrix> ybus_jxd = ybusMap.mapToMatrix(); // line 24 creates the first iteration of this matrix.
   //branchIO.header("\n=== ybusyl after added j*Xd': =============\n");
   //printf("\n=== ybusyl after added j*Xd': =============\n");
   //ybus_jxd->print();
@@ -323,7 +360,7 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
   timer->start(t_mode);
   p_factory->setMode(YDYNLOAD);
   timer->stop(t_mode);
-  boost::shared_ptr<gridpack::math::Matrix> ybus = ybusMap.mapToMatrix();
+  boost::shared_ptr<gridpack::math::Matrix> ybus = ybusMap.mapToMatrix(); // line 24 creates the first iteration of this matrix.
   //branchIO.header("\n=== ybus_jxd after added dynamic load impedance': =============\n");
   //printf("\n=== ybus_dynload after added dynamic load impedance': =============\n");
   //ybus->print();
@@ -333,7 +370,7 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
  
   // Get fault information from fautlts Event from input.xml
   int sw2_2 = fault.from_idx - 1;
-  int sw3_2 = fault.to_idx - 1;
+  int sw3_2 = fault.to_idx - 1; // std::cout << "fault from " << sw2_2 << " to " << sw3_2 << std::endl;
 
   // Compute ybus_fy for fault on stage
   boost::shared_ptr<gridpack::math::Matrix> ybus_fy(ybus->clone());
@@ -346,9 +383,9 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
   timer->stop(t_mode);
   timer->start(t_ybus);
   ybusMap.overwriteMatrix(ybus_fy);
-  //branchIO.header("\n=== ybus_fy: ============\n");
-  //printf("\n=== ybus_fy: ============\n");
-  //ybus_fy->print();
+  // branchIO.header("\n=== ybus_fy: ============\n");
+  // printf("\n=== ybus_fy: ============\n");
+  // ybus_fy->print();
   //ybus_fy->save("ybus_fy_GridPACK_jxd.m");
 
   // Compute ybus_posfy for fault clear stage
@@ -359,9 +396,9 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
   timer->stop(t_mode);
   timer->start(t_ybus);
   ybusMap.incrementMatrix(ybus_posfy);
-  //branchIO.header("\n=== ybus_posfy: ============\n");
-  //printf("\n=== ybus_posfy: ============\n");
-  //ybus_posfy->print();
+  // branchIO.header("\n=== ybus_posfy: ============\n");
+  // printf("\n=== ybus_posfy: ============\n");
+  // ybus_posfy->print();
   //ybus_posfy->save("ybus_posfy_GridPACK_jxd.m");
   timer->stop(t_ybus);
 
@@ -380,28 +417,28 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
 
   const double sysFreq = 60.0;
   double pi = 4.0*atan(1.0);
-  const double basrad = 2.0 * pi * sysFreq;
+  const double basrad = 2.0 * pi * sysFreq; // rotate speed
   gridpack::ComplexType jay(0.0, 1.0);
 
   // switch info is set up here
   int nswtch = 4;
   static double sw1[4];
   static double sw7[4];
-  sw1[0] = 0.0;
-  sw1[1] = fault.start;
-  sw1[2] = fault.end;
-  sw1[3] = p_sim_time;
-  sw7[0] = p_time_step;
-  sw7[1] = fault.step;
-  sw7[2] = p_time_step;
-  sw7[3] = p_time_step;
+  sw1[0] = 0.0; // program start time
+  sw1[1] = fault.start; //std::cout << "sw1[1] = " << sw1[1] << std::endl; // fault start time
+  sw1[2] = fault.end; //std::cout << "sw1[2] = " << sw1[2] << std::endl; // fault end time
+  sw1[3] = p_sim_time;  //std::cout << "sw1[3] = " << sw1[3] << std::endl; // Total simulation time
+  sw7[0] = p_time_step;  //std::cout << "sw7[0] = " << sw7[0] << std::endl; // Simulation time step
+  sw7[1] = fault.step;  //std::cout << "sw7[1] = " << sw7[1] << std::endl; // fault time step
+  sw7[2] = p_time_step;  //std::cout << "sw7[2] = " << sw7[2] << std::endl; // Simulation time step
+  sw7[3] = p_time_step;  //std::cout << "sw7[3] = " << sw7[3] << std::endl; // Simulation time step
   simu_k = 0;
   for (int i = 0; i < nswtch-1; i++) {
-    t_step[i] = (int) ((sw1[i+1] -sw1[i]) / sw7[i]);
-    t_width[i] = (sw1[i+1] - sw1[i]) / t_step[i];
+    t_step[i] = (int) ((sw1[i+1] -sw1[i]) / sw7[i]); //std::cout << "t_step[" << i << "] = " << t_step[i] << std::endl; // How much time for this stage simulation
+    t_width[i] = (sw1[i+1] - sw1[i]) / t_step[i]; //std::cout << "t_width[" << i << "] = " << t_width[i] << std::endl; // Each step time interval
     simu_k += t_step[i];
   }
-  simu_k++;
+  simu_k++; //std::cout << "simu_k = " << simu_k << std::endl; // Simulation cycle
   
   // Initialize vectors for integration 
   p_factory->initDSVect(p_time_step);
@@ -410,8 +447,8 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
   gridpack::mapper::BusVectorMap<DSFullNetwork> ngenMap(p_network);
   // Map to create vector volt
   boost::shared_ptr<gridpack::math::Vector> volt = ngenMap.mapToVector();
-  //p_busIO->header("\n=== volt: ===\n");
-  //volt->print();
+  // p_busIO->header("\n=== volt: ===\n");
+  // volt->print();
 
   gridpack::math::LinearSolver solver(*ybus);
   solver.configure(cursor);
@@ -421,11 +458,11 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
   gridpack::math::LinearSolver solver_posfy(*ybus);
   solver_posfy.configure(cursor);
 
-  steps3 = t_step[0] + t_step[1] + t_step[2] - 1;
-  steps2 = t_step[0] + t_step[1] - 1;
-  steps1 = t_step[0] - 1;
-  h_sol1 = t_width[0];
-  h_sol2 = h_sol1;
+  steps3 = t_step[0] + t_step[1] + t_step[2] - 1; //std::cout << "step3 = " << steps3 << std::endl; // The third part time steps
+  steps2 = t_step[0] + t_step[1] - 1;  //std::cout << "step2 = " << steps2 << std::endl;
+  steps1 = t_step[0] - 1; //std::cout << "step1 = " << steps1 << std::endl;
+  h_sol1 = t_width[0];  //std::cout << "h_sol1 = " << h_sol1 << std::endl; // Time interval
+  h_sol2 = h_sol1; //std::cout << "h_sol2 = " << h_sol2 << std::endl;
   flagP = 0;
   flagC = 0;
   S_Steps = 1;
@@ -433,14 +470,19 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
 
   bool flag = true, flag_corrector = true;
 
-  p_insecureAt = -1;
+  p_insecureAt = -1; // Keep track of whether or not systsem is secure
 
   p_factory->setMode(make_INorton_full);
   gridpack::mapper::BusVectorMap<DSFullNetwork> nbusMap(p_network);
+  // gridpack::mapper::BusVectorMap<DSFullNetwork> nbusMap_temp = nbusMap;
+
   boost::shared_ptr<gridpack::math::Vector> INorton_full = nbusMap.mapToVector();
   boost::shared_ptr<gridpack::math::Vector> INorton_full_chk = nbusMap.mapToVector();
   double max_INorton_full = 0.0;
   boost::shared_ptr<gridpack::math::Vector> volt_full(INorton_full->clone());
+
+  std::cout << "line: 467" << std::endl;
+  INorton_full->print();
 
   timer->stop(t_init);
 #ifdef USE_TIMESTAMP
@@ -471,7 +513,8 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
  
 	
  
-#ifdef USE_HELICS
+// #ifdef USE_HELICS
+#if 0
 	//std::cout << "-------------!!!helics test: HELICS Version: " << helics::versionString << std::endl;
   std::shared_ptr<helics::ValueFederate> fed;
   helics::Publication pub;
@@ -485,9 +528,9 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
   int subCount;
 
   int nBus = p_network->numBuses();
-  int outnodeIndex = 1; //use node 6 to transfer data
+  int outnodeIndex = 1; //use node 4 to transfer data
 
-  std::cout << "nBus:              " << nBus << std::endl;
+  //std::cout << "nBus:              " << nBus << std::endl;
 
   for(int i = 0; i < nBus; i++){
     if(p_network->getGlobalBusIndex(i) == outnodeIndex && p_network->getActiveBus(i)){
@@ -527,8 +570,24 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
   }
 #endif  //end if of HELICS
 
+  double temp = 130;
 
   for (I_Steps = 0; I_Steps < simu_k - 1; I_Steps++) {
+    printf("I_Steps: %d\n ", I_Steps);
+
+    ybus->print();
+
+    // std::cout << "nbusMap->p_nBuses = " << nbusMap.p_nBuses << std::endl;
+
+// printf("\n ========= ybus =========== \n");
+// ybus->print();
+
+// print("\n =========ybus_fy =========== \n");
+// ybus_fy->print();
+
+// printf("\n =========ybus_posfy ===========\n");
+// ybus_posfy->print();
+
   //for (I_Steps = 0; I_Steps < 200; I_Steps++) {
     //char step_str[128];
     //sprintf(step_str,"\nIter %d\n", I_Steps);
@@ -572,13 +631,13 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
 #endif
     int t_mIf = timer->createCategory("DS Solve: Modified Euler Predictor: Make INorton");
     timer->start(t_mIf);
-	p_factory->setMode(make_INorton_full);
+	  p_factory->setMode(make_INorton_full);
     nbusMap.mapToVector(INorton_full);
     ///gridpack::mapper::BusVectorMap<DSFullNetwork> nbusMap(p_network);
     ///boost::shared_ptr<gridpack::math::Vector> INorton_full = nbusMap.mapToVector();
-    //p_busIO->header("\n=== [Predictor] INorton_full: ===\n");
-    //printf("renke test \n=== [Predictor] INorton_full: ===\n");
-    //INorton_full->print();
+    // p_busIO->header("\n=== [Predictor] INorton_full: ===\n");
+    // printf("renke test \n=== [Predictor] INorton_full: ===\n");
+    // INorton_full->print();
     timer->stop(t_mIf);
 #ifdef MAP_PROFILE
   timer->configTimer(false);
@@ -651,34 +710,139 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
 			}
     }
 #else
-    if (flagP == 0) {
+    // if(world_rank == 1)
+    // for(int i = 0; i < nBus; i++){
+    //   if(p_network->getGlobalBusIndex(i) == outnodeIndex && p_network->getActiveBus(i)){
+    //     INorton_full->setElement(i, std::complex<double>{0.5, -0.5});
+    //     INorton_full->ready(); // Needed for petsc
+    //   }
+    // }
+    // printf("\n Change INortan_full, world_rank = %d \n", world_rank);
+    std::cout << "line: 703" << std::endl;
+    INorton_full->print();
+
+    if (flagP == 0) {     // Stage One
+      // solve ybus * volt_full = INorton_full
       solver.solve(*INorton_full, *volt_full);
-    } else if (flagP == 1) {
+    } else if (flagP == 1) {     // Stage Two
+      // solve ybus_fy * volt_full = INorton_full
       solver_fy.solve(*INorton_full, *volt_full);
-    } else if (flagP == 2) {
+    } else if (flagP == 2) {    // Stage Three
+      // solve ybus_posfy * volt_full = INorton_full
       solver_posfy.solve(*INorton_full, *volt_full);
     }
 #endif
     timer->stop(t_psolve);
-
+//std::cout << "line: 682, subvalue: " << subvalue << " world rank: " << world_rank << std::endl;
 #ifdef MAP_PROFILE
-  timer->configTimer(true);
+  timer->configTimer(true); //std::cout << "line: 684, subvalue: " << subvalue << " world rank: " << world_rank <<std::endl;
 #endif
-    //p_busIO->header("\n=== [Predictor] volt_full: ===\n");
-    //volt_full->print();
-    //if (I_Steps==4){
-    //	 exit(0);
-   //	}
+    // p_busIO->header("\n=== [Predictor] volt_full: ===\n");
+    // volt_full->print();
 
+	// printf("\n === after volt sovle, before first volt map: ==== \n");
+	// p_factory->printallbusvoltage();
+
+    // if (I_Steps==4){
+    // 	 exit(0);
+   	// }
+//std::cout << "line: 675, subvalue: " << subvalue << " world rank: " << world_rank <<std::endl;
     int t_vmap= timer->createCategory("DS Solve: Map Volt to Bus");
     timer->start(t_vmap);
+
+    // Receive helics info here
+// #ifdef USE_HELICS
+#if 0
+  // for(int i = 0; i < nBus; i++){
+  //   if(p_network->getGlobalBusIndex(i) == outnodeIndex && p_network->getActiveBus(i)){
+    // volt_full = std::complex<double>{1.0, 1.0};
+   // std::cout << "line: 681, subvalue: " << subvalue << " world rank: " << world_rank <<std::endl;
+   // std::cout << "outnodeIndex" << std::endl;
+    // volt_full->setElement(outnodeIndex, std::complex<double>{0.5, 0.5});
+    //std::cout << "line: 683, subvalue: " << subvalue << " world rank: " << world_rank <<std::endl;
+  //   }
+  // }
+#endif
+
+    std::cout << "I_Steps is " << I_Steps << std::endl;
+#if 1
+    std::cout << "line: 751" << std::endl;
+    INorton_full->print();
+    // nbusMap_temp = nbusMap;
+    // reload();
+
+#if 1
+    gridpack::dynamic_simulation::DSFullBus *dsbus = dynamic_cast<gridpack::dynamic_simulation::DSFullBus*>(p_network->getBus(6).get());
+    dsbus->p_pl = 1.30;
+    dsbus->p_ql = 1.30;
+
+    gridpack::component::DataCollection *dsData;
+    dsData = p_network->getBusData(6).get();
+    double temp;
+    dsData->getValue(LOAD_PL, &temp); std::cout << "LOAD_PL: " << temp << std::endl;
+    dsData->setValue(LOAD_PL, 130);
+    dsData->getValue(LOAD_QL, &temp); std::cout << "LOAD_QL: " << temp << std::endl;
+    dsData->setValue(LOAD_QL, 130);
+
+    ybusMap.mapToMatrix(ybusyl);
+    // dsbus->setLoad(1.3, 1.3);
+#endif
+
+    ybus->print();
+    // nbusMap = gridpack::mapper::BusVectorMap<DSFullNetwork>(p_network);
+    // nbusMap = nbusMap_temp;
+    std::cout << "line: 756" << std::endl;
+    INorton_full->print();
+    std::vector<std::string> tag;
+    std::vector<double> pl;
+    std::vector<double> ql;
+    std::vector<int> status;
+    gridpack::dynamic_simulation::DSFullBus *bus = dynamic_cast<gridpack::dynamic_simulation::DSFullBus*>(p_network->getBus(6).get());
+    bus->getLoadPower(tag, pl, ql, status);
+    for(int i = 0; i < pl.size(); i++){
+      std::cout << "bus 7 pl:" << pl[i] << " ql: " << ql[0] << std::endl; 
+      std::cout << "bus 7 tag" << tag[0] << std::endl;
+      std::cout << "bus status" << status[0] << std::endl;
+    }
+
+    // bus->setLoadPower(6, 130);
+
+    // gridpack::component::DataCollection *dsData;
+    // dsData = p_network->getBusData(6).get();
+    // temp -= 6;
+    // dsData->setValue(LOAD_PL, temp);
+    // dsData->setValue(LOAD_QL, temp);
+    // bus->setLoadPower(1, 130);
+    p_factory->setYBus();
+    
+#endif
+
+#if 0
+    gridpack::dynamic_simulation::DSFullBus *bus = dynamic_cast<gridpack::dynamic_simulation::DSFullBus*>(p_network->getBus(6).get());
+    bus->setLoad(1.5, 0.75);
+
+    for(int m = 0; m < p_network->numBuses(); m++){
+      gridpack::dynamic_simulation::DSFullBus *bus = dynamic_cast<gridpack::dynamic_simulation::DSFullBus*>(p_network->getBus(m).get());
+      double *p;
+      p = new double;
+      double *q;
+      q = new double;
+      bus->getLoad(p, q);
+      std::cout << "Bus [" << m << "] load: " << *p << "  " << *q << std::endl;
+    }
+#endif
+
+
+  // volt_full->print();
 	
-	//printf("after first volt sovle, before first volt map: \n");
-	//p_factory->printallbusvoltage();
+	// printf("after first volt sovle, before first volt map: \n");
+	// p_factory->printallbusvoltage();
 	
-    nbusMap.mapToBus(volt_full);
+  nbusMap.mapToBus(volt_full);
+ // std::cout << "line: 689, subvalue: " << subvalue << " world rank: " << world_rank <<std::endl;
 	
-	//printf("after first volt sovle, after first volt map: \n");
+	// printf("after first volt sovle, after first volt map: \n");
+  // p_factory->printallbusvoltage();
 	
 	if ( I_Steps==0 ) {
 		//printf("enter the initial update oldbusvoltage, Timestep: %d \n", I_Steps);
@@ -687,9 +851,9 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
     timer->stop(t_vmap);
 
     int t_volt= timer->createCategory("DS Solve: Set Volt");
-    timer->start(t_volt);
-    p_factory->setVolt(false);
-	p_factory->updateBusFreq(h_sol1);
+    timer->start(t_volt); //std::cout << "line: 714 entering set volt: " << std::endl;
+    p_factory->setVolt(false); // refresh the generator voltage
+	  p_factory->updateBusFreq(h_sol1);
 	
 	
 	std::vector <double> vwideareafreqs;
@@ -699,7 +863,8 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
 	int tmp = vwideareafreqs.size();
 	double widearea_deltafreq = vwideareafreqs[tmp-1];
 
-#ifdef USE_HELICS
+// #ifdef USE_HELICS
+#if 0
 
 	 for(int i = 0; i < nBus; i++){
      if(p_network->getGlobalBusIndex(i) == outnodeIndex && p_network->getActiveBus(i)){
@@ -728,7 +893,7 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
 		//if(sub.isUpdated()) {
             //auto value = sub.getValue();
 			subvalue = (*fed).getDouble(sub);
-      std::cout << "subvalue:" << subvalue << std::endl; std::cout << "line:731" << " world rank: "<< world_rank << std::endl;
+     // std::cout << "subvalue:" << subvalue << std::endl; std::cout << "line:731" << " world rank: "<< world_rank << std::endl;
 			// printf("-------------!!!Helics sub value: %12.6f \n", subvalue);
                              //update GridPACK object property with value
         //}
@@ -739,14 +904,13 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
        }
    }
 	
-  //broadcast received subvalue
-  MPI_Bcast(&subvalue, 1, MPI_DOUBLE, 1, MPI_COMM_WORLD); //Can only run 2 processors
+  //std::cout << "line: 753, subvalue: " << subvalue << " world rank: " << world_rank <<std::endl;
 
-  std::cout << "line: 745, subvalue: " << subvalue <<std::endl;
+	p_factory->setWideAreaFreqforPSS(subvalue); // 
+  // set up voltage
+//std::cout << "line: 757, subvalue: " << subvalue << " world rank: " << world_rank <<std::endl;
 
-	p_factory->setWideAreaFreqforPSS(subvalue);
-
-	//p_factory->setWideAreaFreqforPSS(widearea_deltafreq);
+	// p_factory->setWideAreaFreqforPSS(widearea_deltafreq);
 	 
 #else	 
 	 
@@ -756,8 +920,8 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
 		
     timer->stop(t_volt);
 	
-	//printf("before update relay, after first volt solv: \n");
-	//p_factory->printallbusvoltage();
+	// printf("before update relay, after first volt solv: \n");
+	// p_factory->printallbusvoltage();
     //renke add, compute bus freq if necessary
     //printf("Timestep, %d \n", I_Steps);
     bool flagBus = p_factory->updateBusRelay(false, h_sol1);
@@ -771,10 +935,10 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
         printf("DSFull_APP::Solve: updatebusrelay return trigger siganl: TURE!!! \n");
 		
         //please update the bus contribution to the Y bus matrix here. //Shuangshuang tbd
-	if (flagP == 0) { 
+	if (flagP == 0) {  // Stage One
              p_factory->setMode(bus_relay);
              ybusMap.overwriteMatrix(ybus);
-        } else if (flagP == 1) {
+        } else if (flagP == 1) { // Stage Two
              p_factory->setMode(bus_relay);
              ybusMap.overwriteMatrix(ybus_fy);
 	     printf("DSFull_APP::Solve: bus relay trip during fault, ybus_fy changed:\n");
@@ -801,7 +965,7 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
              ybus_posfy->save(sybus);
 
 			 
-        } else if (flagP == 2) {
+        } else if (flagP == 2) { // Stage Three
              p_factory->setMode(bus_relay);
              ybusMap.overwriteMatrix(ybus);
              printf("DSFull_APP::Solve: bus relay trip after fault, ybus changed:\n");
@@ -821,14 +985,14 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
 
         }
     }
-	
+	//std::cout << "line: 757, subvalue: " << subvalue << " world rank: " << world_rank <<std::endl;
 	// if branch relay trips, modify the corresponding Ymatrix, renke modified
 	if (flagBranch) {
         
         printf("DSFull_APP::Solve: updatebranchrelay return trigger siganl: TURE!!! \n");
 
         //please update the bus contribution to the Y bus matrix here. //Shuangshuang tbd
-	if (flagP == 0) { 
+	if (flagP == 0) { //printf("leizheng debug flagP = 0:\n");
              p_factory->setMode(branch_relay);
              ybusMap.incrementMatrix(ybus);
         } else if (flagP == 1) {
@@ -878,10 +1042,10 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
 
         }
     }
-	
+	//std::cout << "line: 894, subvalue: " << subvalue << " world rank: " << world_rank <<std::endl;
     //renke add, update old busvoltage first
     p_factory->updateoldbusvoltage(); //renke add
-	
+	//std::cout << "line: 897, subvalue: " << subvalue << " world rank: " << world_rank <<std::endl;
 	//printf("after updateoldbus voltage: \n");
 	//p_factory->printallbusvoltage();
 	
@@ -890,7 +1054,7 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
 #endif
 
     int t_predictor = timer->createCategory("DS Solve: Modified Euler Predictor");
-    //printf("Test: predictor begins: \n");
+    printf("Test: predictor begins: \n");
     timer->start(t_predictor);
     if (I_Steps !=0 && last_S_Steps != S_Steps) {
       p_factory->predictor(h_sol1, false);
@@ -899,28 +1063,35 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
     }
     timer->stop(t_predictor);
 
+// printf("After [Predictor]...\n");
+// p_factory->printallbusvoltage(); //Leizheng debug
+
+    printf("Test: corrector begins: \n");
     if (I_Steps !=0 && last_S_Steps != S_Steps) {
       p_factory->corrector_currentInjection(false);
     } else {
       p_factory->corrector_currentInjection(true);
     }
-
+printf("After [corrector]...\n");
+p_factory->printallbusvoltage(); //Leizheng debug
+//std::cout << "line: 920, subvalue: " << subvalue << " world rank: " << world_rank <<std::endl;
     //INorton_full = nbusMap.mapToVector();
     int t_cmIf = timer->createCategory("DS Solve: Modified Euler Corrector: Make INorton");
     timer->start(t_cmIf);
     p_factory->setMode(make_INorton_full);
-    nbusMap.mapToVector(INorton_full);
-    //p_busIO->header("\n=== [Corrector] INorton_full: ===\n");
-    //printf("\nrelaytest=== [Corrector] INorton_full: ===\n");
-    //INorton_full->print();
+    nbusMap.mapToVector(INorton_full); // refresh INorton_full, but only the genrator has value
+    // p_busIO->header("\n=== [Corrector] INorton_full: ===\n");
+    // printf("\nrelaytest=== [Corrector] INorton_full: ===\n");
+    std::cout << "line 1025" << std::endl;
+    INorton_full->print();
     timer->stop(t_cmIf);
-
+//std::cout << "line: 930, subvalue: " << subvalue << " world rank: " << world_rank <<std::endl;
     // ---------- CALL ssnetwork_cal_volt(S_Steps+1, flagF2)
     // to calculate terminal volt: ----------
     int t_csolve = timer->createCategory("DS Solve: Modified Euler Corrector: Linear Solver");
-    timer->start(t_csolve);
-    volt_full->zero();
-
+    timer->start(t_csolve); //std::cout << "line: 934, subvalue: " << subvalue << " world rank: " << world_rank <<std::endl;
+    volt_full->zero(); //std::cout << "line: 935, subvalue: " << subvalue << " world rank: " << world_rank <<std::endl;
+//std::cout << "line: 936, subvalue: " << subvalue << " world rank: " << world_rank <<std::endl;
 #if 0
     flag_chk = true;
     while (flag_chk == true ) {
@@ -968,11 +1139,22 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
 			}
     }
 #else
-    if (flagP == 0) {
+    // if(world_rank == 1){
+      // INorton_full->setElement(outnodeIndex, std::complex<double>{0.5, -0.5});
+      // INorton_full->ready(); //Need for petsc
+    // }
+    // printf("\n Change INortan_full \n");
+    // INorton_full->print();
+
+
+    if (flagP == 0) { // Stage One
+    // solve ybus * volt_full = INorton_full
       solver.solve(*INorton_full, *volt_full);
-    } else if (flagP == 1) {
+    } else if (flagP == 1) { //Stage Two
+    // solve ybus_fy * volt_full = INorton_full
       solver_fy.solve(*INorton_full, *volt_full);
-    } else if (flagP == 2) {
+    } else if (flagP == 2) { //Stage Three
+    // solve ybus_posfy * volt_full = INorton_full
       solver_posfy.solve(*INorton_full, *volt_full);
     }
 #endif
@@ -984,13 +1166,13 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
     //volt_full->print();
     timer->start(t_vmap);
 	
-	//printf("after second solve, before second map: \n");
-	//p_factory->printallbusvoltage();
-	
+	// printf("after second solve, before second map: \n");
+	// p_factory->printallbusvoltage();
+	// volt_full->setElement(outnodeIndex, std::complex<double>{0.5, 0.5});
     nbusMap.mapToBus(volt_full);
 	
-	//printf("after second solve, after second map: \n");
-	//p_factory->printallbusvoltage();
+	// printf("after second solve, after second map: \n");
+	// p_factory->printallbusvoltage();
 	
     timer->stop(t_vmap);
 
@@ -1011,7 +1193,7 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
 
     //if (I_Steps == simu_k - 1) 
       //p_busIO->write();
-
+//std::cout << "line: 1027, subvalue: " << subvalue << " world rank: " << world_rank <<std::endl;
     if (I_Steps == steps1) {
       solver_fy.solve(*INorton_full, *volt_full);
 //      printf("\n===================Step %d\ttime %5.3f sec:================\n", I_Steps+1, (I_Steps+1) * p_time_step);
@@ -1122,12 +1304,13 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
     } // End of Print to screen
 
 */    //exit(0);
-    last_S_Steps = S_Steps;
+    last_S_Steps = S_Steps; //std::cout << "line: 1138, subvalue: " << subvalue << " world rank: " << world_rank <<std::endl;
     timer->stop(t_secure);
     if (p_monitorGenerators) {
       p_frequencyOK = p_frequencyOK && checkFrequency(p_maximumFrequency);
       if (!p_frequencyOK) I_Steps = simu_k;
     }
+   // std::cout << "line: 1144, subvalue: " << subvalue << " world rank: " << world_rank <<std::endl;
   }
   
 #if 0
@@ -1183,7 +1366,8 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
   timer->stop(t_solve);
   //timer->dump();
   
-#ifdef USE_HELICS
+// #ifdef USE_HELICS
+#if 0
 for(int i = 0; i < nBus; i++){
     if(p_network->getGlobalBusIndex(i) == outnodeIndex && p_network->getActiveBus(i)){
 	(*fed).finalize();

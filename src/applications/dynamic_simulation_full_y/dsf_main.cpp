@@ -97,6 +97,8 @@ main(int argc, char **argv)
     }
     timer->stop(t_config);
 
+    // std::cout << "t_config: " << t_config << std::endl;
+
     // setup and run powerflow calculation
     gridpack::utility::Configuration::CursorPtr cursor;
     cursor = config->getCursor("Configuration.Powerflow");
@@ -109,13 +111,36 @@ main(int argc, char **argv)
     gridpack::powerflow::PFAppModule pf_app;
     pf_app.readNetwork(pf_network, config);
     pf_app.initialize();
+
+#if 0
+    gridpack::powerflow::PFBus *pfbus = dynamic_cast<gridpack::powerflow::PFBus*>(pf_network->getBus(6).get());
+    pfbus->p_pl[0] = 130;
+    pfbus->p_ql[0] = 130;
+
+    gridpack::component::DataCollection *pfData;
+    pfData = pf_network->getBusData(6).get();
+    double temp;
+    pfData->getValue(LOAD_PL, &temp); std::cout << "LOAD_PL: " << temp << std::endl;
+    pfData->setValue(LOAD_PL, 130);
+    pfData->getValue(LOAD_QL, &temp); std::cout << "LOAD_QL: " << temp << std::endl;
+    pfData->setValue(LOAD_QL, 130);
+#endif
+
     if (useNonLinear) {
       pf_app.nl_solve();
     } else {
       pf_app.solve();
     }
+    // pf_app.write();
+    // pf_app.saveData();
+
+#if 0
+    gridpack::powerflow::PFBus *bus = dynamic_cast<gridpack::powerflow::PFBus*>(pf_network->getBus(6).get());
+    bus->p_pl[0] = 130;
+    bus->p_ql[0] = 130;
+#endif
     pf_app.write();
-    pf_app.saveData();
+    pf_app.saveData();  
    
     // setup and run dynamic simulation calculation
     boost::shared_ptr<gridpack::dynamic_simulation::DSFullNetwork>
@@ -139,10 +164,23 @@ main(int argc, char **argv)
     ds_app.readGenerators();
     //printf("ds_app.initialize:\n");
     ds_app.initialize();
+#if 0
+    gridpack::dynamic_simulation::DSFullBus *dsbus = dynamic_cast<gridpack::dynamic_simulation::DSFullBus*>(ds_network->getBus(6).get());
+    dsbus->p_pl = 1.30;
+    dsbus->p_ql = 1.30;
+
+    gridpack::component::DataCollection *dsData;
+    dsData = ds_network->getBusData(6).get();
+    // double temp;
+    dsData->getValue(LOAD_PL, &temp); std::cout << "LOAD_PL: " << temp << std::endl;
+    dsData->setValue(LOAD_PL, 130);
+    dsData->getValue(LOAD_QL, &temp); std::cout << "LOAD_QL: " << temp << std::endl;
+    dsData->setValue(LOAD_QL, 130);
+#endif    
     ds_app.setGeneratorWatch();
-    //printf("gen ID:	mac_ang_s0	mac_spd_s0	pmech	pelect\n");
-    //printf("Step	time:	bus_id	mac_ang_s1	mac_spd_s1\n");
-    //printf("ds_app.solve:\n");
+    // printf("gen ID:	mac_ang_s0	mac_spd_s0	pmech	pelect\n");
+    // printf("Step	time:	bus_id	mac_ang_s1	mac_spd_s1\n");
+    printf("ds_app.solve:\n");
     ds_app.solve(faults[0]);
     //ds_app.write();
     timer->stop(t_total);
