@@ -33,7 +33,8 @@
 
 using namespace std;
 
-#ifdef USE_HELICS
+// #ifdef USE_HELICS
+#if 0
 //#include "helics/ValueFederates.hpp"
 //#include <helics/shared_api_library/ValueFederate.h>
 #include <helics/helics.hpp>
@@ -539,7 +540,8 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
  
 	
  
-#ifdef USE_HELICS
+// #ifdef USE_HELICS
+#if 0
 	//std::cout << "-------------!!!helics test: HELICS Version: " << helics::versionString << std::endl;
 	cout << "-------------!!!helics test: HELICS Version: " << helics::versionString << endl;
 	string configFile = "/home/huan495/gridpack-dev/src/build/applications/dynamic_simulation_full_y/testcase/helics_39bus_3.json";
@@ -745,8 +747,8 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
 	int tmp = vwideareafreqs.size();
 	double widearea_deltafreq = vwideareafreqs[tmp-1];
 
-#ifdef USE_HELICS
-	 
+// #ifdef USE_HELICS
+#if 0	 
 	 //pub.publish(widearea_deltafreq);
 	 for(int i = 0; i < pubCount; i++) {
             pub = fed.getPublication(i);
@@ -1220,7 +1222,8 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
   timer->stop(t_solve);
   //timer->dump();
   
-#ifdef USE_HELICS
+// #ifdef USE_HELICS
+#if 0
 
 	fed.finalize();
 	

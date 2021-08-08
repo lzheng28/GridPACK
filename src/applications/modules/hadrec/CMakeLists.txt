@@ -32,6 +32,12 @@ set(target_libraries
     ${MPI_CXX_LIBRARIES}
     ${PETSC_LIBRARIES})
 
+if (HELICS_DIR)
+  set(target_libraries
+      ${target_libraries}
+      ${HELICS_LIBRARY})
+endif()
+
 include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
 if (GA_FOUND)
   include_directories(AFTER ${GA_INCLUDE_DIRS})

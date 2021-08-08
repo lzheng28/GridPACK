@@ -318,13 +318,14 @@ class HADRECAppModule
      */
 	void exportPSSE23(std::string filename);
 	
+    boost::shared_ptr<gridpack::dynamic_simulation::DSFullNetwork> ds_network;
 
   private:
    boost::shared_ptr<gridpack::utility::Configuration> config_sptr;
 	boost::shared_ptr<gridpack::powerflow::PFNetwork> pf_network;
 	boost::shared_ptr<gridpack::powerflow::PFAppModule> pf_app_sptr;
 	
-	boost::shared_ptr<gridpack::dynamic_simulation::DSFullNetwork> ds_network;
+	// boost::shared_ptr<gridpack::dynamic_simulation::DSFullNetwork> ds_network;
 	boost::shared_ptr<gridpack::dynamic_simulation::DSFullApp> ds_app_sptr;
 	
    gridpack::parallel::Communicator p_comm;
