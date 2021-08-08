@@ -85,8 +85,8 @@ int main(int argc, char **argv)
   int outnodeIndex = 2 - 1;
   boost::shared_ptr<gridpack::dynamic_simulation::DSFullNetwork> network = hadrec_app_sptr->ds_network;
   
-#ifdef USE_HELICS
-// #if 0
+// #ifdef USE_HELICS
+#if 0
 	//std::cout << "-------------!!!helics test: HELICS Version: " << helics::versionString << std::endl;
   std::shared_ptr<helics::ValueFederate> fed;
   helics::Publication pub;
@@ -345,8 +345,8 @@ if (debugoutput){
     //execute one dynamic simulation step
     hadrec_app_sptr->executeDynSimuOneStep();
 
-#ifdef USE_HELICS
-// #if 0
+// #ifdef USE_HELICS
+#if 0
     for(int i = 0; i < nBus; i++){
       if(network->getGlobalBusIndex(i) == outnodeIndex && network->getActiveBus(i)){
         //pub.publish(widearea_deltafreq);
@@ -434,8 +434,8 @@ if (debugoutput){
     isteps++;
   }
 
-#ifdef USE_HELICS
-// #if 0
+// #ifdef USE_HELICS
+#if 0
   for(int i = 0; i < nBus; i++){
       if(network->getGlobalBusIndex(i) == outnodeIndex && network->getActiveBus(i)){
         (*fed).finalize();

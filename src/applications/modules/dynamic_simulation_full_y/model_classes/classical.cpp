@@ -380,8 +380,8 @@ serialWrite(char *string, const int bufsize, const char *signal)
       } else {
         tag = p_ckt[1];
       }
-      sprintf(buf,", %d_%s_angle, %d_%s_speed",p_bus_id,tag.c_str(),
-          p_bus_id,tag.c_str());
+      sprintf(buf,",%d_%s_bus_id,%d_%s_ckt,%d_%s_angle,%d_%s_speed,%d_%s_eqprime",p_bus_id,tag.c_str(),
+          p_bus_id,tag.c_str(), p_bus_id,tag.c_str(), p_bus_id,tag.c_str(), p_bus_id,tag.c_str());
       if (strlen(buf) <= bufsize) {
         sprintf(string,"%s",buf);
         ret = true;

@@ -3026,12 +3026,12 @@ void gridpack::dynamic_simulation::DSFullApp::solvePreInitialize(
   timer->stop(t_init);
   if (!p_suppress_watch_files) {
 #ifdef USE_TIMESTAMP
-    if (p_generatorWatch) p_generatorIO->header("t, t_stamp");//bus_id,ckt,x1d_1,x2w_1,x3Eqp_1,x4Psidp_1,x5Psiqpp_1");
+    if (p_generatorWatch) p_generatorIO->header("t,t_stamp");//bus_id,ckt,x1d_1,x2w_1,x3Eqp_1,x4Psidp_1,x5Psiqpp_1");
     //#  if (p_generatorWatch) p_generatorIO->header("t, t_stamp,bus_id,ckt,x1d_1,x2w_1,x3Eqp_1,x4Psidp_1,x5Psiqpp_1");
     if (p_generatorWatch) p_generatorIO->write("watch_header");
     if (p_generatorWatch) p_generatorIO->header("\n");
 
-    if (p_loadWatch) p_loadIO->header("t, t_stamp");
+    if (p_loadWatch) p_loadIO->header("t,t_stamp");
     if (p_loadWatch) p_loadIO->write("load_watch_header");
     if (p_loadWatch) p_loadIO->header("\n");
 #else

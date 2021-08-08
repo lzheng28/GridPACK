@@ -792,6 +792,25 @@ bool gridpack::dynamic_simulation::GensalGenerator::serialWrite(
     }
   } else if (!strcmp(signal,"debug_initial")) {
   return false;
+  } else if (!strcmp(signal,"watch_header")){
+    if (getWatch()) {
+      char buf[128];
+      std::string tag;
+      if (p_ckt[0] != ' ') {
+        tag = p_ckt;
+      } else {
+        tag = p_ckt[1];
+      }
+      sprintf(buf,",%d_%s_bus_id,%d_%s_ckt,%d_%s_angle,%d_%s_speed,Vterm,Efd,LadIfd,genP,genQ",p_bus_id,p_ckt.c_str(), p_bus_id,p_ckt.c_str(), p_bus_id,p_ckt.c_str(), p_bus_id,p_ckt.c_str());
+      if (strlen(buf) <= bufsize) {
+        sprintf(string,"%s",buf);
+        return true;
+      } else {
+        return false;
+      }
+    } else {
+      return false;
+    }
   }
 }
 
