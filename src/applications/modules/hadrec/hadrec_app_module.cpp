@@ -19,6 +19,7 @@
 #include "gridpack/parser/dictionary.hpp"
 #include "gridpack/math/math.hpp"
 #include <vector>
+// #include <string>
 
 /**
  * Basic constructor
@@ -35,6 +36,62 @@ gridpack::hadrec::HADRECAppModule::HADRECAppModule(void)
  */
 gridpack::hadrec::HADRECAppModule::~HADRECAppModule(void)
 {
+}
+
+double gridpack::hadrec::HADRECAppModule::getTimeStep(){
+    return ds_app_sptr->getTimeStep();
+}
+
+double gridpack::hadrec::HADRECAppModule::getBaseVoltage(int index){
+    return ds_app_sptr->getBaseVoltage(index);
+}
+
+int gridpack::hadrec::HADRECAppModule::isSecure(){
+    return ds_app_sptr->isSecure();
+}
+
+int gridpack::hadrec::HADRECAppModule::getHelicsConnectNode(){
+    gridpack::utility::Configuration::CursorPtr cursor;
+    cursor = config_sptr->getCursor("Configuration.Dynamic_simulation.Helics");
+    int connectNode = 0;
+    if(cursor){
+        connectNode = cursor->get("connectNode", connectNode);
+    }
+    return connectNode;
+}
+
+std::string gridpack::hadrec::HADRECAppModule::getHelicsConfigFile(){
+    gridpack::utility::Configuration::CursorPtr cursor;
+    cursor = config_sptr->getCursor("Configuration.Dynamic_simulation.Helics");
+    std::string configFile = "default.json";
+    if(cursor){
+        configFile = cursor->get("configFile", configFile);
+    }
+    return configFile;
+}
+
+double gridpack::hadrec::HADRECAppModule::getLoadAmplifier(){
+    gridpack::utility::Configuration::CursorPtr cursor;
+    double loadAmplifier = 1.0;
+    cursor = config_sptr->getCursor("Configuration.Dynamic_simulation.Helics");
+    if(cursor){
+        loadAmplifier = cursor->get("loadAmplifier", loadAmplifier);
+    }
+    return loadAmplifier;
+}
+
+bool gridpack::hadrec::HADRECAppModule::useHelicsStatus(){
+    gridpack::utility::Configuration::CursorPtr cursor;
+    gridpack::utility::Configuration::CursorPtr helicsStatus;
+    helicsStatus = config_sptr->getCursor("Configuration.Dynamic_simulation");
+    bool use_helics = false;
+    if(helicsStatus){
+        cursor = config_sptr->getCursor("Configuration.Dynamic_simulation.Helics");
+        if(cursor){
+            use_helics = cursor->get("useHelics", use_helics);
+        }
+    }
+    return use_helics;
 }
 
 /**

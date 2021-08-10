@@ -57,6 +57,10 @@ class DSFullApp
      */
     ~DSFullApp(void);
 
+    double getTimeStep();
+
+    double getBaseVoltage(int index);
+
     /**
      * Read in and partition the dynamic simulation network. The input file is read
      * directly from the Dynamic_simulation block in the configuration file so no

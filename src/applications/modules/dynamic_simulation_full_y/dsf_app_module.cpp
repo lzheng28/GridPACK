@@ -117,6 +117,19 @@ enum Format{PTI23, PTI33};
  * @param otherfile name of network configuration file if different from the
  * one in the input deck
  */
+
+double gridpack::dynamic_simulation::DSFullApp::getTimeStep(){
+    return p_time_step;
+}
+
+double gridpack::dynamic_simulation::DSFullApp::getBaseVoltage(int index){
+  gridpack::component::DataCollection *dsData;
+  double tmp;
+  dsData = p_network->getBusData(index).get(); // Set bus index.
+  dsData->getValue(BUS_BASEKV, &tmp);
+  return tmp;
+}
+
 void gridpack::dynamic_simulation::DSFullApp::readNetwork(
     boost::shared_ptr<DSFullNetwork> &network,
     gridpack::utility::Configuration *config,

@@ -55,6 +55,20 @@ class HADRECAppModule
      * Basic destructor
      */
     ~HADRECAppModule(void);
+
+    double getTimeStep();
+
+    double getBaseVoltage(int index);
+
+    int isSecure();
+
+    int getHelicsConnectNode();
+
+    std::string getHelicsConfigFile();
+
+    double getLoadAmplifier();
+
+    bool useHelicsStatus();
 	
 	/**
 	 * solve power flow before run dynamic simulation 
