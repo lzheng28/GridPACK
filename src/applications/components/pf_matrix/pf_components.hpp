@@ -427,7 +427,7 @@ class PFBus
      * @param scale factor for scaling generation or loads
      */
     void setScale(double scale);
-
+    std::vector<double> p_pl, p_ql,p_ip,p_iq,p_yp,p_yq;
   private:
     double p_shunt_gs;
     double p_shunt_bs;
@@ -455,7 +455,7 @@ class PFBus
     std::vector<std::string> p_gid;
     std::vector<double> p_pt;
     std::vector<double> p_pb;
-    std::vector<double> p_pl, p_ql,p_ip,p_iq,p_yp,p_yq;
+    // std::vector<double> p_pl, p_ql,p_ip,p_iq,p_yp,p_yq;
     std::vector<double> p_savePl;
     std::vector<double> p_saveQl;
     std::vector<int> p_lstatus;
