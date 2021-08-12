@@ -13,7 +13,7 @@
 # Last Change: 2019-11-14 06:49:07 d3g096
 # -------------------------------------------------------------
 
-# 
+# version 
 cmake_minimum_required (VERSION 3.3.0)
 
 # This allows the use of LOCATION(target)
