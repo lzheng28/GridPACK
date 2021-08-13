@@ -106,6 +106,8 @@ class PFAppModule
 
     int getWatchVoltageBusID(gridpack::utility::Configuration *config);
 
+    double getPowerFactor(gridpack::utility::Configuration *config);
+
     /**
      * Read in and partition the powerflow network. The input file is read
      * directly from the Powerflow block in the configuration file so no

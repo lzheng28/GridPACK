@@ -170,9 +170,10 @@ int main(int argc, char **argv)
           gridpack::powerflow::PFBus *bus = dynamic_cast<gridpack::powerflow::PFBus*>(pf_network->getBus(k).get());
 
           if((bus->p_pl).size() > 0){
+            double power_factor = pf_app.getPowerFactor(config); 
             bus->p_pl[0] = strArray[I_Steps][pf_network->getGlobalBusIndex(k)];
-            bus->p_ql[0] = strArray[I_Steps][pf_network->getGlobalBusIndex(k)] * tan(acos(0.85));
-            std::cout << "&&&&& bus->p_pl[0] = " << bus->p_pl[0] << "  &&&&&bus->p_ql[0] = " << bus->p_ql[0] << std::endl;
+            bus->p_ql[0] = strArray[I_Steps][pf_network->getGlobalBusIndex(k)] * tan(acos(power_factor));
+            std::cout << "&&&&& bus->p_pl[0] = " << bus->p_pl[0] << "  &&&&&bus->p_ql[0] = " << bus->p_ql[0] << " " << power_factor << std::endl;
           }
         }
       }

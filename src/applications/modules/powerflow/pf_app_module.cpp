@@ -175,6 +175,16 @@ int gridpack::powerflow::PFAppModule::getWatchVoltageBusID(gridpack::utility::Co
     return watchBusID;
 }
 
+double gridpack::powerflow::PFAppModule::getPowerFactor(gridpack::utility::Configuration *config){
+    gridpack::utility::Configuration::CursorPtr cursor;
+    double power_factor = 0.85;
+    cursor = config->getCursor("Configuration.Powerflow.Helics");
+    if(cursor){
+        power_factor = cursor->get("powerFactor", power_factor);
+    }
+    return power_factor;
+}
+
 enum Parser{PTI23, PTI33, MAT_POWER, GOSS};
 
 /**
