@@ -51,6 +51,130 @@ gridpack::powerflow::PFAppModule::~PFAppModule(void)
 {
 }
 
+double gridpack::powerflow::PFAppModule::getTimeStep(gridpack::utility::Configuration *config){
+    gridpack::utility::Configuration::CursorPtr cursor;
+    cursor = config->getCursor("Configuration.Powerflow");
+    double time_step = 1.0;
+    if(cursor){
+        time_step = cursor->get("time_step", time_step);
+    }
+    return time_step;
+}
+
+double gridpack::powerflow::PFAppModule::getTotalSimuTime(gridpack::utility::Configuration *config){
+    gridpack::utility::Configuration::CursorPtr cursor;
+    cursor = config->getCursor("Configuration.Powerflow");
+    double total_time = 1.0;
+    if(cursor){
+        total_time = cursor->get("simulationTime", total_time);
+    }
+    return total_time;
+}
+
+double gridpack::powerflow::PFAppModule::getBaseVoltage(int index, gridpack::utility::Configuration *config){
+  gridpack::component::DataCollection *pfData;
+  double tmp;
+  pfData = p_network->getBusData(index).get(); // Set bus index.
+  pfData->getValue(BUS_BASEKV, &tmp);
+  return tmp;
+}
+
+int gridpack::powerflow::PFAppModule::getHelicsConnectNode(gridpack::utility::Configuration *config){
+    gridpack::utility::Configuration::CursorPtr cursor;
+    cursor = config->getCursor("Configuration.Powerflow.Helics");
+    int connectNode = 1;
+    if(cursor){
+        connectNode = cursor->get("connectNode", connectNode);
+    }
+    return connectNode;
+}
+
+std::string gridpack::powerflow::PFAppModule::getHelicsConfigFile(gridpack::utility::Configuration *config){
+    gridpack::utility::Configuration::CursorPtr cursor;
+    cursor = config->getCursor("Configuration.Powerflow.Helics");
+    std::string configFile = "default.json";
+    if(cursor){
+        configFile = cursor->get("configFile", configFile);
+    }
+    return configFile;
+}
+
+double gridpack::powerflow::PFAppModule::getLoadAmplifier(gridpack::utility::Configuration *config){
+    gridpack::utility::Configuration::CursorPtr cursor;
+    double loadAmplifier = 1.0;
+    cursor = config->getCursor("Configuration.Powerflow.Helics");
+    if(cursor){
+        loadAmplifier = cursor->get("loadAmplifier", loadAmplifier);
+    }
+    return loadAmplifier;
+}
+
+bool gridpack::powerflow::PFAppModule::useHelicsStatus(gridpack::utility::Configuration *config){
+    gridpack::utility::Configuration::CursorPtr cursor;
+    gridpack::utility::Configuration::CursorPtr helicsStatus;
+    helicsStatus = config->getCursor("Configuration.Powerflow");
+    bool use_helics = false;
+    if(helicsStatus){
+        cursor = config->getCursor("Configuration.Powerflow.Helics");
+        if(cursor){
+            use_helics = cursor->get("useHelics", use_helics);
+        }
+    }
+    return use_helics;
+}
+
+std::string gridpack::powerflow::PFAppModule::getLoadFile(gridpack::utility::Configuration *config){
+    gridpack::utility::Configuration::CursorPtr cursor;
+    cursor = config->getCursor("Configuration.Powerflow");
+    std::string load_file = "";
+    if(cursor){
+      load_file = cursor->get("loadFile", load_file);
+    }
+    return load_file;
+}
+
+std::string gridpack::powerflow::PFAppModule::getSaveFile(gridpack::utility::Configuration *config){
+    gridpack::utility::Configuration::CursorPtr cursor;
+    cursor = config->getCursor("Configuration.Powerflow");
+    std::string save_file = "";
+    if(cursor){
+      save_file = cursor->get("saveFile", save_file);
+    }
+    return save_file;
+}
+
+
+std::vector<std::vector<double>> gridpack::powerflow::PFAppModule::getLoadFileData(gridpack::utility::Configuration *config){
+  std::string load_file = getLoadFile(config);
+  std::vector<std::vector<double>> strArray; 
+  if(load_file.compare("")){
+    // read file
+    std::ifstream inFile(load_file, std::ios::in);
+    std::string lineStr;
+    while (getline(inFile, lineStr))
+    {
+      std::stringstream ss(lineStr);
+      std::string str;
+      std::vector<double> lineArray;
+      while (getline(ss, str, ','))
+          lineArray.push_back(atof(str.c_str()));
+      strArray.push_back(lineArray);
+    }
+  }
+  return strArray;
+}
+
+int gridpack::powerflow::PFAppModule::getWatchVoltageBusID(gridpack::utility::Configuration *config){
+    gridpack::utility::Configuration::CursorPtr cursor;
+    gridpack::utility::Configuration::CursorPtr watchStatus;
+    cursor = config->getCursor("Configuration.Powerflow.watchVoltageBusIDs");
+    int watchBusID = 1;
+    if(cursor){
+      watchBusID = cursor->get("watchVoltageBusID", watchBusID); std::cout << "watchBusID" << watchBusID << std::endl;
+    }
+    return watchBusID;
+}
+
 enum Parser{PTI23, PTI33, MAT_POWER, GOSS};
 
 /**
