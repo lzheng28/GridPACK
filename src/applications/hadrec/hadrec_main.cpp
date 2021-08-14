@@ -592,7 +592,7 @@ if (debugoutput){
   hadrec_app_sptr.reset();
 
   timer->stop(t_total);
-  //timer->dump();
+  timer->dump();
 
   return 0;
 }

@@ -53,7 +53,7 @@ int gridpack::hadrec::HADRECAppModule::isSecure(){
 int gridpack::hadrec::HADRECAppModule::getHelicsConnectNode(){
     gridpack::utility::Configuration::CursorPtr cursor;
     cursor = config_sptr->getCursor("Configuration.Dynamic_simulation.Helics");
-    int connectNode = 0;
+    int connectNode = 1;
     if(cursor){
         connectNode = cursor->get("connectNode", connectNode);
     }
