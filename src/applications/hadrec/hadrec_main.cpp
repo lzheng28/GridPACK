@@ -53,6 +53,7 @@ int main(int argc, char **argv)
   gridpack::utility::CoarseTimer *timer =
     gridpack::utility::CoarseTimer::instance();
   int t_total = timer->createCategory("Dynamic Simulation: Total Application");
+  timer->start(t_total);
 
   //allocate the memory for the HADRECAppModule
   boost::shared_ptr<gridpack::hadrec::HADRECAppModule>
