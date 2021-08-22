@@ -481,8 +481,8 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
   double max_INorton_full = 0.0;
   boost::shared_ptr<gridpack::math::Vector> volt_full(INorton_full->clone());
 
-  std::cout << "line: 467" << std::endl;
-  INorton_full->print();
+  // std::cout << "line: 467" << std::endl;
+  // INorton_full->print();
 
   timer->stop(t_init);
 #ifdef USE_TIMESTAMP
@@ -575,7 +575,7 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
   for (I_Steps = 0; I_Steps < simu_k - 1; I_Steps++) {
     printf("I_Steps: %d\n ", I_Steps);
 
-    ybus->print();
+    // ybus->print();
 
     // std::cout << "nbusMap->p_nBuses = " << nbusMap.p_nBuses << std::endl;
 
@@ -718,8 +718,8 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
     //   }
     // }
     // printf("\n Change INortan_full, world_rank = %d \n", world_rank);
-    std::cout << "line: 703" << std::endl;
-    INorton_full->print();
+    // std::cout << "line: 703" << std::endl;
+    // INorton_full->print();
 
     if (flagP == 0) {     // Stage One
       // solve ybus * volt_full = INorton_full
@@ -764,14 +764,14 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
   // }
 #endif
 
-    std::cout << "I_Steps is " << I_Steps << std::endl;
+    // std::cout << "I_Steps is " << I_Steps << std::endl;
 #if 1
-    std::cout << "line: 751" << std::endl;
-    INorton_full->print();
+    // std::cout << "line: 751" << std::endl;
+    // INorton_full->print();
     // nbusMap_temp = nbusMap;
     // reload();
 
-#if 1
+#if 0
     gridpack::dynamic_simulation::DSFullBus *dsbus = dynamic_cast<gridpack::dynamic_simulation::DSFullBus*>(p_network->getBus(6).get());
     dsbus->p_pl = 1.30;
     dsbus->p_ql = 1.30;
@@ -788,22 +788,22 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
     // dsbus->setLoad(1.3, 1.3);
 #endif
 
-    ybus->print();
+    // ybus->print();
     // nbusMap = gridpack::mapper::BusVectorMap<DSFullNetwork>(p_network);
     // nbusMap = nbusMap_temp;
-    std::cout << "line: 756" << std::endl;
-    INorton_full->print();
+    // std::cout << "line: 756" << std::endl;
+    // INorton_full->print();
     std::vector<std::string> tag;
     std::vector<double> pl;
     std::vector<double> ql;
     std::vector<int> status;
     gridpack::dynamic_simulation::DSFullBus *bus = dynamic_cast<gridpack::dynamic_simulation::DSFullBus*>(p_network->getBus(6).get());
     bus->getLoadPower(tag, pl, ql, status);
-    for(int i = 0; i < pl.size(); i++){
-      std::cout << "bus 7 pl:" << pl[i] << " ql: " << ql[0] << std::endl; 
-      std::cout << "bus 7 tag" << tag[0] << std::endl;
-      std::cout << "bus status" << status[0] << std::endl;
-    }
+    // for(int i = 0; i < pl.size(); i++){
+    //   std::cout << "bus 7 pl:" << pl[i] << " ql: " << ql[0] << std::endl; 
+    //   std::cout << "bus 7 tag" << tag[0] << std::endl;
+    //   std::cout << "bus status" << status[0] << std::endl;
+    // }
 
     // bus->setLoadPower(6, 130);
 
@@ -942,7 +942,7 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
              p_factory->setMode(bus_relay);
              ybusMap.overwriteMatrix(ybus_fy);
 	     printf("DSFull_APP::Solve: bus relay trip during fault, ybus_fy changed:\n");
-	     ybus_fy->print();
+	    //  ybus_fy->print();
 	     char sybus[100];
              sprintf(sybus, "ybus_fy_%d_relay.m",I_Steps );
 			 
@@ -951,7 +951,7 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
 	     printf("DSFull_APP::Solve: bus relay trip during fault, ybus changed too:\n");
              p_factory->setMode(bus_relay);
              ybusMap.overwriteMatrix(ybus);
-	     ybus->print();
+	    //  ybus->print();
              sprintf(sybus, "ybus_%d_relay.m",I_Steps );
 
 	     ybus->save(sybus);
@@ -959,7 +959,7 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
              printf("DSFull_APP::Solve: bus relay trip during fault, ybus_posfy changed too:\n");
              p_factory->setMode(bus_relay);
              ybusMap.overwriteMatrix(ybus_posfy);
-             ybus_posfy->print();
+            //  ybus_posfy->print();
              sprintf(sybus, "ybus_posfy_%d_relay.m",I_Steps );
 
              ybus_posfy->save(sybus);
@@ -969,7 +969,7 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
              p_factory->setMode(bus_relay);
              ybusMap.overwriteMatrix(ybus);
              printf("DSFull_APP::Solve: bus relay trip after fault, ybus changed:\n");
-	     ybus->print();
+	    //  ybus->print();
 	     char sybus[100];
              sprintf(sybus, "ybus_%d_relay.m",I_Steps );
 
@@ -978,7 +978,7 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
              printf("DSFull_APP::Solve: bus relay trip after fault, ybus_posfy changed too:\n");
              p_factory->setMode(bus_relay);
              ybusMap.overwriteMatrix(ybus_posfy);
-             ybus_posfy->print();
+            //  ybus_posfy->print();
              sprintf(sybus, "ybus_posfy_%d_relay.m",I_Steps );
 
              ybus_posfy->save(sybus);
@@ -999,7 +999,7 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
              p_factory->setMode(branch_relay);
              ybusMap.incrementMatrix(ybus_fy);
 	     printf("DSFull_APP::Solve: branch relay trip during fault, ybus_fy changed:\n");
-	     ybus_fy->print();
+	    //  ybus_fy->print();
 	     char sybus[100];
              sprintf(sybus, "ybus_fy_%d_relay.m",I_Steps );
 			 
@@ -1008,7 +1008,7 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
              printf("DSFull_APP::Solve: branch relay trip during fault, ybus changed too:\n");
              p_factory->setMode(branch_relay);
              ybusMap.incrementMatrix(ybus);
-             ybus->print();
+            //  ybus->print();
              sprintf(sybus, "ybus_%d_relay.m",I_Steps );
 
              ybus->save(sybus);
@@ -1017,7 +1017,7 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
 	     printf("DSFull_APP::Solve: branch relay trip during fault, ybus_posfy changed too:\n");
              p_factory->setMode(branch_relay);
              ybusMap.incrementMatrix(ybus_posfy);
-	     ybus_posfy->print();
+	    //  ybus_posfy->print();
              sprintf(sybus, "ybus_posfy_%d_relay.m",I_Steps );
 
 	     ybus_posfy->save(sybus);
@@ -1026,7 +1026,7 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
              printf("DSFull_APP::Solve: branch relay trip during fault, ybus changed too:\n");
              p_factory->setMode(branch_relay);
              ybusMap.incrementMatrix(ybus);
-             ybus->print();
+            //  ybus->print();
              char sybus[100];
              sprintf(sybus, "ybus_%d_relay.m",I_Steps );
 
@@ -1035,7 +1035,7 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
              printf("DSFull_APP::Solve: branch relay trip during fault, ybus_posfy changed too:\n");
              p_factory->setMode(branch_relay);
              ybusMap.incrementMatrix(ybus_posfy);
-             ybus_posfy->print();
+            //  ybus_posfy->print();
              sprintf(sybus, "ybus_posfy_%d_relay.m",I_Steps );
 
              ybus_posfy->save(sybus);
@@ -1082,8 +1082,8 @@ p_factory->printallbusvoltage(); //Leizheng debug
     nbusMap.mapToVector(INorton_full); // refresh INorton_full, but only the genrator has value
     // p_busIO->header("\n=== [Corrector] INorton_full: ===\n");
     // printf("\nrelaytest=== [Corrector] INorton_full: ===\n");
-    std::cout << "line 1025" << std::endl;
-    INorton_full->print();
+    // std::cout << "line 1025" << std::endl;
+    // INorton_full->print();
     timer->stop(t_cmIf);
 //std::cout << "line: 930, subvalue: " << subvalue << " world rank: " << world_rank <<std::endl;
     // ---------- CALL ssnetwork_cal_volt(S_Steps+1, flagF2)
