@@ -1325,9 +1325,9 @@ void gridpack::dynamic_simulation::DSFullBus::setExtendedCmplBusVoltage(
   if (ibustype == -1) return;
   
   int iorgbusno;
-  if (data->getValue(BUS_NUMBER, &iorgbusno)){
-	  printf("DSFullBus::setExtendedCmplBusVoltage(), Bus No.: %d, Bus Type: %d \n", iorgbusno, ibustype);
-  }
+  // if (data->getValue(BUS_NUMBER, &iorgbusno)){
+	//   printf("DSFullBus::setExtendedCmplBusVoltage(), Bus No.: %d, Bus Type: %d \n", iorgbusno, ibustype);
+  // }
   
   //get neigb bus voltage information
   std::vector<boost::shared_ptr<BaseComponent> > nghbrs;
@@ -1351,7 +1351,7 @@ void gridpack::dynamic_simulation::DSFullBus::setExtendedCmplBusVoltage(
 		{
 			bus_mag= bus1->getVoltage();
 			bus_ang= bus1->getPhase();
-			printf("   DSFullBus::setExtendedCmplBusVoltage(), find corresponding raw bus, bus no.: %d, mag: %f, ang: %f, \n", bus1->getOriginalIndex(), bus_mag, bus_ang);
+			// printf("   DSFullBus::setExtendedCmplBusVoltage(), find corresponding raw bus, bus no.: %d, mag: %f, ang: %f, \n", bus1->getOriginalIndex(), bus_mag, bus_ang);
 			
 			break;
 		}
@@ -1368,7 +1368,7 @@ void gridpack::dynamic_simulation::DSFullBus::setExtendedCmplBusVoltage(
 			bus1->setVoltage(bus_mag);
 			bus1->setPhase(bus_ang);
 			p_CmplFeederBus = bus1;
-			printf("   DSFullBus::setExtendedCmplBusVoltage(), find LOAD_BUS, bus no.: %d, set value, mag: %f, ang: %f, \n", bus1->getOriginalIndex(), bus_mag, bus_ang);
+			// printf("   DSFullBus::setExtendedCmplBusVoltage(), find LOAD_BUS, bus no.: %d, set value, mag: %f, ang: %f, \n", bus1->getOriginalIndex(), bus_mag, bus_ang);
 			break;
 		}
 	}
@@ -1379,13 +1379,13 @@ void gridpack::dynamic_simulation::DSFullBus::setExtendedCmplBusVoltage(
 		if (branch1->checkExtendedLoadBranchType() == 1){
 			setCmplXfmrPt(branch1);
 			p_CmplFeederBus->setCmplXfmrPt(branch1);
-			printf("   DSFullBus::setExtendedCmplBusVoltage(), find corresponding xfmr branch \n");
+			// printf("   DSFullBus::setExtendedCmplBusVoltage(), find corresponding xfmr branch \n");
 		}
 		
 		if (branch1->checkExtendedLoadBranchType() == 2){
 			setCmplXfeederPt(branch1);
 			p_CmplFeederBus->setCmplXfeederPt(branch1);
-			printf("   DSFullBus::setExtendedCmplBusVoltage(), find corresponding feeder branch \n");
+			// printf("   DSFullBus::setExtendedCmplBusVoltage(), find corresponding feeder branch \n");
 		}
 	}
 	
@@ -1397,7 +1397,7 @@ void gridpack::dynamic_simulation::DSFullBus::setExtendedCmplBusVoltage(
 		if (bus1->checkExtendedLoadBus() == 1) // if the neigb bus is the LOW_SIDE_BUS
 		{
 			p_CmplXfmrBus = bus1;
-			printf("   DSFullBus::setExtendedCmplBusVoltage(), find corresponding xfmr bus \n");
+			// printf("   DSFullBus::setExtendedCmplBusVoltage(), find corresponding xfmr bus \n");
 			break;
 		}
 	}
@@ -1421,9 +1421,9 @@ void gridpack::dynamic_simulation::DSFullBus::LoadExtendedCmplBus(
   if ( snewbustype!="LOW_SIDE_BUS" && snewbustype!="LOAD_BUS" ) return;
 
   int iorgbusno;
-  if (data->getValue(BUS_NUMBER, &iorgbusno)){
-	  printf("DSFullBus::LoadExtendedCmplBus(), Bus No.: %d \n", iorgbusno);
-  }
+  // if (data->getValue(BUS_NUMBER, &iorgbusno)){
+	//   printf("DSFullBus::LoadExtendedCmplBus(), Bus No.: %d \n", iorgbusno);
+  // }
   
   p_sbase = 100.0;
   
@@ -1433,11 +1433,11 @@ void gridpack::dynamic_simulation::DSFullBus::LoadExtendedCmplBus(
 	p_shunt = p_shunt && data->getValue(LOAD_BSS, &p_shunt_bs);
 	data->getValue(LOAD_MVA, &loadMVABase);
 	p_shunt_bs = 0.04; //tmp code, check and remove ???
-	printf("DSFullBus::LoadExtendedCmplBus(), LOW_SIDE_BUS, bss = %f, loadMVABase =%f, \n ", p_shunt_bs, loadMVABase);
+	// printf("DSFullBus::LoadExtendedCmplBus(), LOW_SIDE_BUS, bss = %f, loadMVABase =%f, \n ", p_shunt_bs, loadMVABase);
 	
 	p_shunt_bs = p_shunt_bs*loadMVABase/p_sbase;
 	setParam(BUS_SHUNT_BL, p_shunt_bs, 0);
-	printf("DSFullBus::LoadExtendedCmplBus(), LOW_SIDE_BUS, p_shunt_bs = %f\n", p_shunt_bs);
+	// printf("DSFullBus::LoadExtendedCmplBus(), LOW_SIDE_BUS, p_shunt_bs = %f\n", p_shunt_bs);
 	return; 
   }
 	  
@@ -1457,7 +1457,7 @@ void gridpack::dynamic_simulation::DSFullBus::LoadExtendedCmplBus(
   p_powerflowload_p.clear();
   p_powerflowload_q.clear();
   p_loadid.clear();
-  printf("DSFullBus::LoadExtendedCmplBus():  entering processing load model \n");
+  // printf("DSFullBus::LoadExtendedCmplBus():  entering processing load model \n");
   
   /*
   if (data->getValue(LOAD_NUMBER, &p_npowerflow_load)) {
@@ -1498,7 +1498,7 @@ void gridpack::dynamic_simulation::DSFullBus::LoadExtendedCmplBus(
   
   gridpack::ComplexType vt = gridpack::ComplexType(p_voltage*cos(p_angle), p_voltage*sin(p_angle)); 
   
-  printf("DSFullBus::LoadExtendedCmplBus(), p_voltage: %12.6f, p_angle: %12.6f, \n", p_voltage, p_angle);
+  // printf("DSFullBus::LoadExtendedCmplBus(), p_voltage: %12.6f, p_angle: %12.6f, \n", p_voltage, p_angle);
   
   sysMVABase = p_sbase;
   Pload_MW = p_pl;
@@ -1524,10 +1524,10 @@ void gridpack::dynamic_simulation::DSFullBus::LoadExtendedCmplBus(
   data->getValue(LOAD_FMC, &FmC);
   data->getValue(LOAD_FMD, &FmD);
   
-  printf("DSFullBus::LoadExtendedCmplBus(), LOAD_BUS Par: loadMVABase: %f, Pload_pu: %f, Qload_pu: %f, Bss: %f, Xxf: %f, Rfdr: %f, xfdr: %f, Tfixhs: %f, Tfixls: %f, Vmin: %f, Vmax: %f, \n", 
-		loadMVABase, Pload_pu, Qload_pu, Bss, Xxf, Rfdr, Xfdr, Tfixhs, Tfixls, Vmin, Vmax);
-  printf("DSFullBus::LoadExtendedCmplBus(), LOAD_BUS Par: Tmin: %f, Tmax: %f, step: %f, FmA: %f, FmB: %f, FmC: %f, FmD: %f, Vmin: %f, Vmax: %f, \n", 
-		Tmin, Tmax, step, FmA, FmB, FmC, FmD, Vmin, Vmax);
+  // printf("DSFullBus::LoadExtendedCmplBus(), LOAD_BUS Par: loadMVABase: %f, Pload_pu: %f, Qload_pu: %f, Bss: %f, Xxf: %f, Rfdr: %f, xfdr: %f, Tfixhs: %f, Tfixls: %f, Vmin: %f, Vmax: %f, \n", 
+	// 	loadMVABase, Pload_pu, Qload_pu, Bss, Xxf, Rfdr, Xfdr, Tfixhs, Tfixls, Vmin, Vmax);
+  // printf("DSFullBus::LoadExtendedCmplBus(), LOAD_BUS Par: Tmin: %f, Tmax: %f, step: %f, FmA: %f, FmB: %f, FmC: %f, FmD: %f, Vmin: %f, Vmax: %f, \n", 
+	// 	Tmin, Tmax, step, FmA, FmB, FmC, FmD, Vmin, Vmax);
   
   // calculate the mva base if CMPLDW.loadMVABase <= 0.0
           
@@ -1549,7 +1549,7 @@ void gridpack::dynamic_simulation::DSFullBus::LoadExtendedCmplBus(
   gridpack::ComplexType cplx_tmp_3 = cplx_tmp/vt;
   gridpack::ComplexType Ilf_pu = gridpack::ComplexType(real(cplx_tmp_3), -imag(cplx_tmp_3));
   
-  printf("DSFullBus::LoadExtendedCmplBus(), Bss_pu: %12.6f, Xxf_pu: %12.6f, vt: %12.6f +j* %12.6f, Sload_pu: %12.6f +j* %12.6f, Ilf_pu: %12.6f +j* %12.6f, \n", Bss_pu, Xxf_pu, real(vt), imag(vt), real(cplx_tmp), imag(cplx_tmp), real(Ilf_pu), imag(Ilf_pu));
+  // printf("DSFullBus::LoadExtendedCmplBus(), Bss_pu: %12.6f, Xxf_pu: %12.6f, vt: %12.6f +j* %12.6f, Sload_pu: %12.6f +j* %12.6f, Ilf_pu: %12.6f +j* %12.6f, \n", Bss_pu, Xxf_pu, real(vt), imag(vt), real(cplx_tmp), imag(cplx_tmp), real(Ilf_pu), imag(Ilf_pu));
   
   Rfdr_pu = Rfdr*sysMVABase/loadMVABase;
   Xfdr_pu = Xfdr*sysMVABase/loadMVABase;
@@ -1568,7 +1568,7 @@ void gridpack::dynamic_simulation::DSFullBus::LoadExtendedCmplBus(
   tap = sqrt( (vt_mag*Vlow_mag)*(vt_mag*Vlow_mag) / 
      ( (Qload_pu*Xxf_pu-vt_mag*vt_mag)*(Qload_pu*Xxf_pu-vt_mag*vt_mag) + (Xxf_pu*Pload_pu)*(Xxf_pu*Pload_pu) ));
 	 
-  printf("DSFullBus::LoadExtendedCmplBus(), Rfdr_pu: %12.6f, Xfdr_pu: %12.6f, Xxf_pu: %12.6f, Vlow_mag: %12.6f, tap: %12.6f, \n", Rfdr_pu, Xfdr_pu, Xxf_pu, Vlow_mag, tap); 
+  // printf("DSFullBus::LoadExtendedCmplBus(), Rfdr_pu: %12.6f, Xfdr_pu: %12.6f, Xxf_pu: %12.6f, Vlow_mag: %12.6f, tap: %12.6f, \n", Rfdr_pu, Xfdr_pu, Xxf_pu, Vlow_mag, tap); 
 
   // need to check if Tap is within the limit
   bool tapReachLimit = false;
@@ -1586,7 +1586,7 @@ void gridpack::dynamic_simulation::DSFullBus::LoadExtendedCmplBus(
      tap = 1.0+double(tapNum)*step; 
   }
   
-  printf("DSFullBus::LoadExtendedCmplBus(), after round the closest tap: tap = %12.6f, \n", tap);
+  // printf("DSFullBus::LoadExtendedCmplBus(), after round the closest tap: tap = %12.6f, \n", tap);
   
   //set the parameters of the transformer branch with the composite load model
   p_CmplXfmrBranch->SetCmplXfmrBranch(Xxf_pu, 1.0/tap);
@@ -1601,14 +1601,14 @@ void gridpack::dynamic_simulation::DSFullBus::LoadExtendedCmplBus(
   gridpack::ComplexType cplx_tmp2 = gridpack::ComplexType(-imag(cplx_tmp), real(cplx_tmp));
   gridpack::ComplexType volt_high = vt - cplx_tmp2;
   
-  printf("DSFullBus::LoadExtendedCmplBus(), cplx_tmp: %12.6f + j*%12.6f , volt_high: %12.6f + j*%12.6f , \n", real(cplx_tmp), imag(cplx_tmp), real(volt_high), imag(volt_high));
+  // printf("DSFullBus::LoadExtendedCmplBus(), cplx_tmp: %12.6f + j*%12.6f , volt_high: %12.6f + j*%12.6f , \n", real(cplx_tmp), imag(cplx_tmp), real(volt_high), imag(volt_high));
   
   //voltMag_high = abs(CMPLDW.volt_low)  // cmpl check???
 
   gridpack::ComplexType volt_low= volt_high*Tfixls*tap/Tfixhs;
   
-  printf("DSFullBus::LoadExtendedCmplBus() volt_low at XFMR bus: %f + j*%f, \n", real(volt_low), imag(volt_low));
-  printf("DSFullBus::LoadExtendedCmplBus() volt_low at XFMR bus, mag: %f, angle: %f, \n", abs(volt_low), atan2(imag(volt_low), real(volt_low)));
+  // printf("DSFullBus::LoadExtendedCmplBus() volt_low at XFMR bus: %f + j*%f, \n", real(volt_low), imag(volt_low));
+  // printf("DSFullBus::LoadExtendedCmplBus() volt_low at XFMR bus, mag: %f, angle: %f, \n", abs(volt_low), atan2(imag(volt_low), real(volt_low)));
   
   //set the voltage value of the transformer bus with the composite load model
   p_CmplXfmrBus->setVoltage(abs(volt_low));
@@ -1617,18 +1617,18 @@ void gridpack::dynamic_simulation::DSFullBus::LoadExtendedCmplBus(
   // current flowing from the low voltage side into the feeder
   gridpack::ComplexType I_lowbus = Ilf_pu*Tfixhs/(tap*Tfixls);
   
-  printf("DSFullBus::LoadExtendedCmplBus() I_lowbus: %f + j*%f, \n", real(I_lowbus), imag(I_lowbus));
+  // printf("DSFullBus::LoadExtendedCmplBus() I_lowbus: %f + j*%f, \n", real(I_lowbus), imag(I_lowbus));
   
   Imag_lowbus = abs(I_lowbus);
 
   cplx_tmp = gridpack::ComplexType(0.0, Bss_pu);
   gridpack::ComplexType Ishunt = volt_low*cplx_tmp; // Bss charging current
   
-  printf("DSFullBus::LoadExtendedCmplBus() Ishunt: %f + j*%f, \n", real(Ishunt), imag(Ishunt));
+  // printf("DSFullBus::LoadExtendedCmplBus() Ishunt: %f + j*%f, \n", real(Ishunt), imag(Ishunt));
 
   gridpack::ComplexType Ifeeder = I_lowbus-Ishunt;
   
-  printf("DSFullBus::LoadExtendedCmplBus() Ifeeder: %f + j*%f, \n", real(Ifeeder), imag(Ifeeder));
+  // printf("DSFullBus::LoadExtendedCmplBus() Ifeeder: %f + j*%f, \n", real(Ifeeder), imag(Ifeeder));
 
   Ifeeder_mag = abs(Ifeeder);
 
@@ -1639,8 +1639,8 @@ void gridpack::dynamic_simulation::DSFullBus::LoadExtendedCmplBus(
   Vload_mag = abs(volt_load);
   Vload_ang = atan2(imag(volt_load), real(volt_load)); //cmpl check???
   
-  printf("DSFullBus::LoadExtendedCmplBus() volt_load at load bus: %f + j*%f, \n", real(volt_load), imag(volt_load));
-  printf("DSFullBus::LoadExtendedCmplBus() volt_load at load bus, mag: %f, angle: %f, \n", Vload_mag, Vload_ang);
+  // printf("DSFullBus::LoadExtendedCmplBus() volt_load at load bus: %f + j*%f, \n", real(volt_load), imag(volt_load));
+  // printf("DSFullBus::LoadExtendedCmplBus() volt_load at load bus, mag: %f, angle: %f, \n", Vload_mag, Vload_ang);
   
   setVoltage(Vload_mag);
   setPhase(Vload_ang);
@@ -1650,7 +1650,7 @@ void gridpack::dynamic_simulation::DSFullBus::LoadExtendedCmplBus(
   PloadBus_pu = real(Sload);
   QloadBus_pu = imag(Sload);
   
-  printf("DSFullBus::LoadExtendedCmplBus() PloadBus_pu: %f, QloadBus_pu: %f, \n", PloadBus_pu, QloadBus_pu);
+  // printf("DSFullBus::LoadExtendedCmplBus() PloadBus_pu: %f, QloadBus_pu: %f, \n", PloadBus_pu, QloadBus_pu);
     
   double Fel ;
   Fel = 0.0; // not supported yet, force it to zero
@@ -1776,8 +1776,8 @@ void gridpack::dynamic_simulation::DSFullBus::LoadExtendedCmplBus(
 	Pint_static =  PloadBus_pu*Fstatic*sysMVABase;  //check with Qiuhua
 	data->getValue(LOAD_PFS, &cmpl_pf);
 	Qint_static =  Pint_static*tan(acos(cmpl_pf));
-	printf("   dynamic load Static Load at bus %d\n", iorgbusno);
-	printf("   DSFullBus::LoadExtendedCmplBus(), Static load model, LOAD_PFS: %f, Pint_static: %f MW, Qint_static_pu: %f MVar,\n", cmpl_pf, Pint_static, Qint_static);
+	// printf("   dynamic load Static Load at bus %d\n", iorgbusno);
+	// printf("   DSFullBus::LoadExtendedCmplBus(), Static load model, LOAD_PFS: %f, Pint_static: %f MW, Qint_static_pu: %f MVar,\n", cmpl_pf, Pint_static, Qint_static);
 
 	BaseLoadModel *load = loadFactory.createLoadModel("IEELBL"); 
 	if (load) {
@@ -1798,10 +1798,10 @@ void gridpack::dynamic_simulation::DSFullBus::LoadExtendedCmplBus(
   // and add the compensation var to the load bus
   double compVar = totalLoadRactivePower/sysMVABase-QloadBus_pu;  // check with qiuhua???
   //p_shunt_bs = compVar/Vload_mag/Vload_mag;
-  printf("  DSFullBus::LoadExtendedCmplBus(), Bus compensation var, compVar: %f pu, \n",  compVar); 
+  // printf("  DSFullBus::LoadExtendedCmplBus(), Bus compensation var, compVar: %f pu, \n",  compVar); 
   p_pl = 0.0;
   p_ql = -compVar;  
-  printf("  DSFullBus::LoadExtendedCmplBus(), Bus Y matrix loads, p_pl: %f, p_ql: %f, \n",  p_pl, p_ql);
+  // printf("  DSFullBus::LoadExtendedCmplBus(), Bus Y matrix loads, p_pl: %f, p_ql: %f, \n",  p_pl, p_ql);
   	
 }
 
@@ -3904,12 +3904,12 @@ void gridpack::dynamic_simulation::DSFullBranch::printDSFullBranch()
     dynamic_cast<gridpack::dynamic_simulation::DSFullBus*>(getBus2().get());
 	
 	branchelem = p_reactance.size();
-	printf("DSFullBranch::printDSFullBranch(), Branch from Bus %d (isolated: %d) to Bus %d (isolated: %d), branchelem: %d \n", bus1->getOriginalIndex(), bus1->checkisolated(), 
-		bus2->getOriginalIndex(), bus2->checkisolated(), branchelem);
-	for ( i=0; i<p_elems; i++ ){
-		printf("DSFullBranch::printDSFullBranch(), %d-th elem: cktid: %s, p_active: %d, p_reactance: %f, p_resistance: %f, p_phase_shift: %f, p_tap_ratio: %f, p_xform: %d, p_branch_status: %d, p_shunt: %d \n", 
-                       i, p_ckt[i].c_str(), p_active, p_reactance[i], p_resistance[i], p_phase_shift[i], p_tap_ratio[i], static_cast<int>(p_xform[i]), p_branch_status[i], static_cast<int>(p_shunt[i]));
-	}	
+	// printf("DSFullBranch::printDSFullBranch(), Branch from Bus %d (isolated: %d) to Bus %d (isolated: %d), branchelem: %d \n", bus1->getOriginalIndex(), bus1->checkisolated(), 
+	// 	bus2->getOriginalIndex(), bus2->checkisolated(), branchelem);
+	// for ( i=0; i<p_elems; i++ ){
+	// 	printf("DSFullBranch::printDSFullBranch(), %d-th elem: cktid: %s, p_active: %d, p_reactance: %f, p_resistance: %f, p_phase_shift: %f, p_tap_ratio: %f, p_xform: %d, p_branch_status: %d, p_shunt: %d \n", 
+  //                      i, p_ckt[i].c_str(), p_active, p_reactance[i], p_resistance[i], p_phase_shift[i], p_tap_ratio[i], static_cast<int>(p_xform[i]), p_branch_status[i], static_cast<int>(p_shunt[i]));
+	// }	
 }
 
 /**
