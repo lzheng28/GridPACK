@@ -23,7 +23,7 @@
 #include <vector>
 #include <string>
 
-#define ARRAY_LEN 2
+#define ARRAY_LEN 1000
 
 #ifdef USE_HELICS
 //#include "helics/ValueFederates.hpp"
@@ -87,6 +87,8 @@ int main(int argc, char **argv)
 
   int outnodeIndex = 1;
 
+  std::vector<int> outnodeIndexs;
+
   boost::shared_ptr<gridpack::dynamic_simulation::DSFullNetwork> network = hadrec_app_sptr->ds_network;
 
   double time_step = hadrec_app_sptr->getTimeStep();
@@ -104,6 +106,7 @@ int main(int argc, char **argv)
   double helics_requestTime;
   double helics_grantime;
   std::complex<double> subvalue = {1.0, 1.0};
+  std::vector<std::complex<double>> subvalues;
   
   //to get publication definitions
   int pubCount;
@@ -119,6 +122,16 @@ int main(int argc, char **argv)
   int connectedBusID = hadrec_app_sptr->getHelicsConnectNode();
   std::vector<int> localIndices = network->getLocalBusIndices(connectedBusID);
   std::cout << "connectedBusID: " << connectedBusID << ", me" << std::endl;
+
+  std::vector<int> connectedBusIDs = hadrec_app_sptr->getHelicsConnectNodes();
+  std::vector<std::vector<int>> localIndices_;
+  for(int i = 0; i < connectedBusIDs.size(); i++){
+    localIndices_.push_back(network->getLocalBusIndices(connectedBusIDs[i])); //Get local indices of connected nodes
+  }
+
+  for(int ii = 0; ii < connectedBusIDs.size(); ii++){
+    std::cout << "connectedBusIDs: " << connectedBusIDs[ii] << std::endl;
+  }
 
   for(int i = 0; i < localIndices.size(); i++){
     if(network->getActiveBus(localIndices[i])){
@@ -149,6 +162,11 @@ int main(int argc, char **argv)
   if(use_helics){
     if(localIndices.size() > 0 && network->getActiveBus(localIndices[0])){
       outnodeIndex = localIndices[0];
+      
+      for(int j = 0; j < connectedBusIDs.size(); j++){
+        outnodeIndexs.push_back(localIndices_[j][0]);
+      }
+
       std::cout << "-------------!!!helics test: HELICS Version: " << helics::versionString << std::endl;
       std::string configFile = hadrec_app_sptr->getHelicsConfigFile();
       // string configFile = "/home/huan495/gridpack-dev/src/build/applications/dynamic_simulation_full_y/testcase/helics_39bus_3.json";
@@ -402,9 +420,9 @@ if (debugoutput){
           std::string pubInfo = pub.getInfo();
           //std::cout << "-------------!!!helics test: HELICS pub info: " << pubInfo << std::endl;
           // pub.publish(widearea_deltafreq);
-          gridpack::dynamic_simulation::DSFullBus *bus = dynamic_cast<gridpack::dynamic_simulation::DSFullBus*>(network->getBus(outnodeIndex).get());
+          gridpack::dynamic_simulation::DSFullBus *bus = dynamic_cast<gridpack::dynamic_simulation::DSFullBus*>(network->getBus(outnodeIndexs[j]).get());
 
-          gridpack::ComplexType voltage = network->getBus(outnodeIndex)->getComplexVoltage();
+          gridpack::ComplexType voltage = network->getBus(outnodeIndexs[j])->getComplexVoltage();
           double rV = real(voltage);
           double iV = imag(voltage);
           double V = sqrt(rV*rV+iV*iV);
@@ -413,7 +431,7 @@ if (debugoutput){
             Ang = -Ang;
           }
 
-          double basevoltage = hadrec_app_sptr->getBaseVoltage(outnodeIndex);
+          double basevoltage = hadrec_app_sptr->getBaseVoltage(outnodeIndexs[j]);
 
           std::complex<double> voltage_cosim {V * basevoltage * 1000, 0};
           // std::complex<double> voltage_cosim{142300, 0};
@@ -442,30 +460,35 @@ if (debugoutput){
             // printf("-------------!!!Helics sub value: %12.6f \n", subvalue);
                                   //update GridPACK object property with value
               //}
+          subvalues.push_back(subvalue);
         }
         //printf("-------------!!!Outside Helics def sub value: %12.6f \n", subvalue);
-
+        for(int j = 0; j < subCount; j++){
         double load_amplification_factor = hadrec_app_sptr->getLoadAmplifier();
 
         // gridpack::powerflow::PFBus *bus = dynamic_cast<gridpack::powerflow::PFBus*>(p_network->getBus(i).get());
-        ptmp = subvalue.real() * load_amplification_factor / 1000000;
-        qtmp = subvalue.imag() * load_amplification_factor / 1000000;
+        ptmp = subvalues[j].real() * load_amplification_factor / 1000000;
+        qtmp = subvalues[j].imag() * load_amplification_factor / 1000000;
 
-        arr[0] = ptmp;
-        arr[1] = qtmp;
+        arr[j] = ptmp;
+        arr[j + subCount] = qtmp; std::cout << "line: 477, ptmp, qtmp: " << ptmp << " " << qtmp << ", me: " << me << std::endl;
+        }
+        subvalues = {};
       }
       MPI_Barrier(MPI_COMM_WORLD);
-      ptmp = arr[0];
-      qtmp = arr[1];
+      for(int j = 0; j < subCount; j++){
+      ptmp = arr[j];
+      qtmp = arr[j + subCount];
 
       double ppu_tmp = ptmp/100.0;
       double qpu_tmp = qtmp/100.0;
 
-      std::cout << "line: 470, ppu_tmp, qpu_tmp: " << ppu_tmp << " " << qpu_tmp << ", me: " << me << std::endl;
+      std::cout << "line: 488, ppu_tmp, qpu_tmp: " << ppu_tmp << " " << qpu_tmp << ", me: " << me << std::endl;
 
-      buslist.push_back(connectedBusID);
+      buslist.push_back(connectedBusIDs[j]);
       plist.push_back(ppu_tmp);
       qlist.push_back(qpu_tmp);
+      }
       //  the scatterInjectionLoad will change the loads at the buslist to be the values in the plist and qlist
       //  the value of load P and Q should be p.u., based on 100 MVA system base
       hadrec_app_sptr->scatterInjectionLoadNew(buslist, plist, qlist);

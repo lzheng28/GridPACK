@@ -64,6 +64,8 @@ class HADRECAppModule
 
     int getHelicsConnectNode();
 
+    std::vector<int> getHelicsConnectNodes();
+
     std::string getHelicsConfigFile();
 
     double getLoadAmplifier();
