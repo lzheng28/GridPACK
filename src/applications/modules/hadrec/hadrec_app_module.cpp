@@ -463,9 +463,9 @@ void gridpack::hadrec::HADRECAppModule::fullInitializationBeforeDynSimuSteps(
  * Execute only one simulation time step 
  */
 void gridpack::hadrec::HADRECAppModule::executeDynSimuOneStep(){
-		
+	// std::cout << "line: 466 ds" << std::endl;
 	ds_app_sptr->executeOneSimuStep();
-	
+	// std::cout << "line: 468 ds" << std::endl;
 /*
    std::vector<double> rSpd, rAng, vMag, vAng;
 
