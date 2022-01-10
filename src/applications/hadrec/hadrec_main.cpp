@@ -33,6 +33,16 @@
 
 const char* help = "HADREC Test application";
 
+void printBus(boost::shared_ptr<gridpack::dynamic_simulation::DSFullNetwork> network, int me){
+  for(int i = 0; i < network->numBuses(); i++){
+    std::cout << "Rank: " << me << "  " << network->getOriginalBusIndex(i);
+    if(!network->getActiveBus(i)){
+      std::cout << " GhostBus";
+    }
+    std::cout << std::endl;
+  }
+}
+
 int main(int argc, char **argv)
 {
   // Initialize libraries (parallel and math)
@@ -123,6 +133,8 @@ int main(int argc, char **argv)
   int connectedBusID = hadrec_app_sptr->getHelicsConnectNode();
   std::vector<int> localIndices = network->getLocalBusIndices(connectedBusID);
   std::cout << "connectedBusID: " << connectedBusID << ", me" << std::endl;
+
+  printBus(network, me);
 
   std::vector<int> connectedBusIDs = hadrec_app_sptr->getHelicsConnectNodes();
   std::vector<std::vector<int>> localIndices_;
