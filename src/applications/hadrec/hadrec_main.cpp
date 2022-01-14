@@ -437,7 +437,7 @@ if (debugoutput){
     std::vector<double> qlist;
     double ptmp = 700;
     double qtmp = 250;
-
+    // double co_sim_time_step = 1.0; // transfer data time step
     if(use_helics){
       // if(localIndices.size() > 0 && network->getActiveBus(localIndices[0])){
       int* grecvcounts = (int*)malloc(sizeof(int) * size);
