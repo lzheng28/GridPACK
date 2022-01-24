@@ -756,6 +756,7 @@ double gridpack::dynamic_simulation::GensalGenerator::getFieldVoltage()
 bool gridpack::dynamic_simulation::GensalGenerator::serialWrite(
     char* string, const int bufsize, const char *signal)
 {
+  std::string tag;
   if (!strcmp(signal,"standard")) {
     //sprintf(string,"      %8d            %2s    %12.6f    %12.6f    %12.6f    %12.6f\n",
     //    p_bus_id,p_ckt.c_str(),real(p_mac_ang_s1),real(p_mac_spd_s1),real(p_mech),
@@ -795,13 +796,13 @@ bool gridpack::dynamic_simulation::GensalGenerator::serialWrite(
   } else if (!strcmp(signal,"watch_header")){
     if (getWatch()) {
       char buf[128];
-      std::string tag;
-      if (p_ckt[0] != ' ') {
+      if (p_ckt[p_ckt.length() - 1] != ' ') {
         tag = p_ckt;
       } else {
-        tag = p_ckt[1];
+        tag = p_ckt.substr(0, p_ckt.length() - 1);
       }
-      sprintf(buf,",%d_%s_bus_id,%d_%s_ckt,%d_%s_angle,%d_%s_speed,Vterm,Efd,LadIfd,genP,genQ",p_bus_id,p_ckt.c_str(), p_bus_id,p_ckt.c_str(), p_bus_id,p_ckt.c_str(), p_bus_id,p_ckt.c_str());
+      // sprintf(buf,",%d_%s_bus_id, %d_%s_ckt, %d_%s_angle, %d_%s_speed, %d_%s_Vterm, %d_%s_Efd, %d_%s_LadIfd, %d_%s_genP, %d_%s_genQ",p_bus_id,p_ckt.c_str(), p_bus_id,p_ckt.c_str(), p_bus_id,p_ckt.c_str(), p_bus_id,p_ckt.c_str(), p_bus_id,p_ckt.c_str(), p_bus_id,p_ckt.c_str(), p_bus_id,p_ckt.c_str(), p_bus_id,p_ckt.c_str(), p_bus_id,p_ckt.c_str());
+      sprintf(buf,",%d_%s_bus_id, %d_%s_ckt, %d_%s_angle, %d_%s_speed, %d_%s_Vterm, %d_%s_Efd, %d_%s_LadIfd, %d_%s_genP, %d_%s_genQ",p_bus_id,tag.c_str(), p_bus_id,tag.c_str(), p_bus_id,tag.c_str(), p_bus_id, tag.c_str(), p_bus_id, tag.c_str(), p_bus_id, tag.c_str(), p_bus_id, tag.c_str(), p_bus_id, tag.c_str(), p_bus_id, tag.c_str());
       if (strlen(buf) <= bufsize) {
         sprintf(string,"%s",buf);
         return true;

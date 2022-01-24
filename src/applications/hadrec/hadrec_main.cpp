@@ -22,6 +22,7 @@
 #include "gridpack/applications/modules/dynamic_simulation_full_y/dsf_app_module.hpp"
 #include <vector>
 #include <string>
+#include <fstream>
 
 #define ARRAY_LEN 512
 
@@ -244,10 +245,17 @@ int main(int argc, char **argv)
   //printf ("------------- hadrec_main function after initializeDynSimu \n");
 
   bool debugoutput = false; // whether print out debug staffs
-  bool boutputob = false;
+  bool boutputob = true;
   double lp, lq, pg, qg;
   int busno = 5;
   bool btmp;
+
+  std::string observationFileName = hadrec_app_sptr->getObservationFileName();
+  if(observationFileName == ""){
+    boutputob = false;
+  } else {
+    boutputob = true;
+  }
 
   //-----test get load and get generator function-----------
 if (debugoutput){
@@ -320,6 +328,7 @@ if (debugoutput){
 
   if (boutputob && me == 0){
     printf("-----------renke debug, getObservationLists------------\n");
+    
     printf("-----------ob gen bus list, ");
     for (idxtmp=0; idxtmp<obs_genBus.size(); idxtmp++){
       printf(" %d, ", obs_genBus[idxtmp]);
@@ -356,10 +365,12 @@ if (debugoutput){
   std::vector<double> tmp_p;
   std::vector<double> tmp_q;
 
+  std::ofstream outFile;
   if (debugoutput && me == 0){
+    // memset(buf,'\0',sizeof(buf));
 	hadrec_app_sptr->getZoneLoads(tmp_p, tmp_q, zone_id);
   
-    printf("\n-------------------get zone load information, total zones: %d \n\n", zone_id.size());
+    printf("\n-------------------get zone load information, total zones: %lu \n\n", zone_id.size());
     for (idxtmp=0; idxtmp<zone_id.size(); idxtmp++){
 
       printf(" zone number: %d, total load p: %f, total load q: %f,\n", zone_id[idxtmp], tmp_p[idxtmp], tmp_q[idxtmp]);
@@ -370,7 +381,7 @@ if (debugoutput){
   if (debugoutput && me == 0){
 	hadrec_app_sptr->getZoneGeneratorPower(tmp_p, tmp_q, zone_id);
   
-    printf("\n-------------------get zone generation information, total zones: %d \n\n", zone_id.size());
+    printf("\n-------------------get zone generation information, total zones: %lu \n\n", zone_id.size());
     for (idxtmp=0; idxtmp<zone_id.size(); idxtmp++){
 
       printf(" zone number: %d, total generation p: %f, total generation q: %f,\n", zone_id[idxtmp], tmp_p[idxtmp], tmp_q[idxtmp]);
@@ -378,47 +389,62 @@ if (debugoutput){
     }
   }
 
-  if (boutputob && me == 0) {
-    printf("observations,  ");
+  char buf[1024];
+  std::string outbuf;
+  if (boutputob && me == 0) {  
+    outFile.open(observationFileName, std::ios::out);
+
+    sprintf(buf, "time,  ");
+    outbuf += buf;
 	for (idxtmp=0; idxtmp<obs_genBus.size(); idxtmp++){
-      printf("gen-at-bus-%d-ID-%s-speed,  ", obs_genBus[idxtmp], obs_genIDs[idxtmp].c_str());
-	 
+      sprintf(buf, "gen-at-bus-%d-ID-%s-speed,  ", obs_genBus[idxtmp], obs_genIDs[idxtmp].c_str());
+      outbuf += buf;
     }
 	
 	for (idxtmp=0; idxtmp<obs_genBus.size(); idxtmp++){
       //printf("gen-at-bus-%d-ID-%s-speed,  ", obs_genBus[idxtmp], obs_genIDs[idxtmp].c_str());
-	  printf("gen-at-bus-%d-ID-%s-angle,  ", obs_genBus[idxtmp], obs_genIDs[idxtmp].c_str());
-
+	  sprintf(buf, "gen-at-bus-%d-ID-%s-angle,  ", obs_genBus[idxtmp], obs_genIDs[idxtmp].c_str());
+    outbuf += buf;
     }
 	
 	for (idxtmp=0; idxtmp<obs_genBus.size(); idxtmp++){
 
-	  printf("gen-at-bus-%d-ID-%s-P,  ", obs_genBus[idxtmp], obs_genIDs[idxtmp].c_str());
-
+	  sprintf(buf, "gen-at-bus-%d-ID-%s-P,  ", obs_genBus[idxtmp], obs_genIDs[idxtmp].c_str());
+    outbuf += buf;
     }
 	
 	for (idxtmp=0; idxtmp<obs_genBus.size(); idxtmp++){
 
-	  printf("gen-at-bus-%d-ID-%s-Q,  ", obs_genBus[idxtmp], obs_genIDs[idxtmp].c_str());
+	  sprintf(buf, "gen-at-bus-%d-ID-%s-Q,  ", obs_genBus[idxtmp], obs_genIDs[idxtmp].c_str());
+    outbuf += buf;
     }
 	
     for (idxtmp=0; idxtmp<obs_vBus.size(); idxtmp++){
-      printf("bus-%d-magnitude, ", obs_vBus[idxtmp]);
+      sprintf(buf, "bus-%d-magnitude, ", obs_vBus[idxtmp]);
+      outbuf += buf;
 	  //printf("bus-%d-angle, ", obs_vBus[idxtmp]);
     }
 	
 	for (idxtmp=0; idxtmp<obs_vBus.size(); idxtmp++){
       //printf("bus-%d-magnitude, ", obs_vBus[idxtmp]);
-	  printf("bus-%d-angle, ", obs_vBus[idxtmp]);
+	  sprintf(buf, "bus-%d-angle, ", obs_vBus[idxtmp]);
+    outbuf += buf;
     }
 
     for (idxtmp=0; idxtmp<obs_loadBus.size(); idxtmp++){
-      printf("remaining-load-at-bus-%d-ID-%s,  ", obs_loadBus[idxtmp], obs_loadIDs[idxtmp].c_str());
+      sprintf(buf, "remaining-load-at-bus-%d-ID-%s,  ", obs_loadBus[idxtmp], obs_loadIDs[idxtmp].c_str());
+      outbuf += buf;
     }
-    printf(" \n");
-
+    sprintf(buf, " \n");
+    outbuf += buf;
+    outFile << outbuf;
   }
 // std::cout << "line: 406 " << std::endl;
+  double co_sim_time_interval = hadrec_app_sptr->getCosimTimeInterval(); // transfer data time step
+  double co_sim_next_step_time = 0.0;
+
+  std::cout << "co_sim_time_interval: " << co_sim_time_interval << std::endl;
+
   while(!hadrec_app_sptr->isDynSimuDone()){
   //   // if the dynamic simulation is not done (hit the end time)
   //   if ( bApplyAct_LoadShedding && (isteps == 2500 || isteps == 3000 ||
@@ -449,8 +475,9 @@ if (debugoutput){
     std::vector<double> qlist;
     double ptmp = 700;
     double qtmp = 250;
-    // double co_sim_time_step = 1.0; // transfer data time step
-    if(use_helics){
+    
+    if(use_helics && isteps * time_step == co_sim_next_step_time){
+      co_sim_next_step_time += co_sim_time_interval;
       // if(localIndices.size() > 0 && network->getActiveBus(localIndices[0])){
       int* grecvcounts = (int*)malloc(sizeof(int) * size);
       grecvcounts[me] = outnodeIndexs.size() * 2; //std::cout << "line: 441, grecvcounts[me]: " << grecvcounts[me] << ", me: " << me << std::endl;
@@ -610,19 +637,26 @@ if (debugoutput){
     }
     
 // #endif  //end if of HELICS
+    // Save observation file
     ob_vals.clear();
     ob_vals = hadrec_app_sptr->getObservations();
     if (boutputob && me == 0) {
-      printf("observations, ");
+      outbuf = "";
+      sprintf(buf, "%.4f, ", time_step * isteps);
+      outbuf += buf;
       for (idxtmp=0; idxtmp<ob_vals.size(); idxtmp++) {
-        printf(" %16.12f, ", ob_vals[idxtmp]);
+        sprintf(buf, " %16.12f, ", ob_vals[idxtmp]);
+        outbuf += buf;
       }
-      printf(" \n");
+      sprintf(buf, " \n");
+      outbuf += buf;
     }
+    outFile << outbuf;
 
     isteps++;
   }
 
+  outFile.close(); // close and save observation file
 // #ifdef USE_HELICS
 // #if 0
   if(use_helics){

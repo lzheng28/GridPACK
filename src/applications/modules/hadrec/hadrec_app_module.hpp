@@ -71,6 +71,10 @@ class HADRECAppModule
     double getLoadAmplifier();
 
     bool useHelicsStatus();
+
+    std::string getObservationFileName();
+
+    double getCosimTimeInterval();
 	
 	/**
 	 * solve power flow before run dynamic simulation 

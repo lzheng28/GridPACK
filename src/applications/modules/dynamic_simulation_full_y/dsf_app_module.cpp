@@ -3629,7 +3629,7 @@ void gridpack::dynamic_simulation::DSFullApp::executeOneSimuStep( ){
     //printf("----------!renke debug, after solve INorton_full and map back voltage ----------\n");
     t_secure = timer->createCategory("DS Solve: Check Security");
     timer->start(t_secure);
-    if (p_generatorWatch && Simu_Current_Step%p_generatorWatchFrequency == 0) {
+    if (p_generatorWatch && Simu_Current_Step%p_generatorWatchFrequency == 0) { //Watch frequency means how many time steps record one time
       char tbuf[32];
       if (!p_suppress_watch_files) {
 #ifdef USE_TIMESTAMP

@@ -118,6 +118,58 @@ bool gridpack::hadrec::HADRECAppModule::useHelicsStatus(){
     return use_helics;
 }
 
+std::string gridpack::hadrec::HADRECAppModule::getObservationFileName(){
+    gridpack::utility::Configuration::CursorPtr cursor;
+    gridpack::utility::Configuration::CursorPtr observe_cursor;
+    observe_cursor = config_sptr->getCursor("Configuration.Dynamic_simulation");
+    std::string observefile_name = "";
+    if(observe_cursor){
+        cursor = config_sptr->getCursor("Configuration.Dynamic_simulation.observations");
+        if(cursor){
+            observefile_name = cursor->get("observationFileName", observefile_name);
+        }
+    }
+    int i = 0;
+    for(; i <observefile_name.size(); i++){
+        if(observefile_name[i] >= 'A' && observefile_name[i] <= 'Z' || \
+           observefile_name[i] >= 'a' && observefile_name[i] <= 'z' || \
+           observefile_name[i] >= '0' && observefile_name[i] <= '9' || \
+           observefile_name[i] == '_' || observefile_name[i] == '.' || \
+           observefile_name[i] == '-'){
+            break;
+        }
+    }
+    observefile_name = observefile_name.substr(i);
+    for(i = 0; i <observefile_name.size(); i++){
+        if(observefile_name[i] >= 'A' && observefile_name[i] <= 'Z' || \
+           observefile_name[i] >= 'a' && observefile_name[i] <= 'z' || \
+           observefile_name[i] >= '0' && observefile_name[i] <= '9' || \
+           observefile_name[i] == '_' || observefile_name[i] == '.' || \
+           observefile_name[i] == '-'){
+            continue;
+        } else {
+            break;
+        }
+    }
+    observefile_name = observefile_name.substr(0, i);
+    std::cout << "observefile_name = " << observefile_name << std::endl;
+    return observefile_name;
+}
+
+double gridpack::hadrec::HADRECAppModule::getCosimTimeInterval(){
+    gridpack::utility::Configuration::CursorPtr cursor;
+    gridpack::utility::Configuration::CursorPtr helicsStatus;
+    helicsStatus = config_sptr->getCursor("Configuration.Dynamic_simulation");
+    double cosim_time_interval = 0.0;
+    if(helicsStatus){
+        cursor = config_sptr->getCursor("Configuration.Dynamic_simulation.Helics");
+        if(cursor){
+            cosim_time_interval = cursor->get("cosim_time_interval", cosim_time_interval);
+        }
+    }
+    return cosim_time_interval;
+}
+
 /**
  * solve power flow before run dynamic simulation 
  */
