@@ -127,15 +127,15 @@ int main(int argc, char **argv)
   int nBus = network->numBuses();
   // int outnodeIndex = 2 - 1; //use node 118 to transfer data
 
-  std::cout << "nBus:              " << nBus << std::endl;
+  // std::cout << "nBus:              " << nBus << std::endl;
   // std::vector<int> localIndices;
   // localIndices = network->getLocalBusIndices(504);
 
-  int connectedBusID = hadrec_app_sptr->getHelicsConnectNode();
-  std::vector<int> localIndices = network->getLocalBusIndices(connectedBusID);
-  std::cout << "connectedBusID: " << connectedBusID << ", me" << std::endl;
+  // int connectedBusID = hadrec_app_sptr->getHelicsConnectNode();
+  // std::vector<int> localIndices = network->getLocalBusIndices(connectedBusID);
+  // std::cout << "connectedBusID: " << connectedBusID << ", me" << std::endl;
 
-  printBus(network, me);
+  // printBus(network, me);
 
   std::vector<int> connectedBusIDs = hadrec_app_sptr->getHelicsConnectNodes();
   std::vector<std::vector<int>> localIndices_;
@@ -164,17 +164,17 @@ int main(int argc, char **argv)
 
   std::complex<double>* recvbuf = (std::complex<double>*)malloc(sizeof(std::complex<double>) * sendcounts[me]);
 
-  for(int ii = 0; ii < connectedBusIDs.size(); ii++){
-    std::cout << "connectedBusIDs: " << connectedBusIDs[ii] << std::endl;
-  }
+  // for(int ii = 0; ii < connectedBusIDs.size(); ii++){
+  //   std::cout << "connectedBusIDs: " << connectedBusIDs[ii] << std::endl;
+  // }
 
-  for(int i = 0; i < localIndices.size(); i++){
-    if(network->getActiveBus(localIndices[i])){
-      std::cout << "Active Local indics, me: "<< localIndices[i] << " " << me << std::endl;
-    } else {
-      std::cout << "Inactivate Local indics, me: " << localIndices[i] << " " << me << std::endl;
-    }
-  }
+  // for(int i = 0; i < localIndices.size(); i++){
+  //   if(network->getActiveBus(localIndices[i])){
+  //     std::cout << "Active Local indics, me: "<< localIndices[i] << " " << me << std::endl;
+  //   } else {
+  //     std::cout << "Inactivate Local indics, me: " << localIndices[i] << " " << me << std::endl;
+  //   }
+  // }
 
   MPI_Win mpi_win;
   MPI_Aint mpi_size;
@@ -192,17 +192,17 @@ int main(int argc, char **argv)
                               MPI_COMM_WORLD, &baseptr, &mpi_win);
       MPI_Win_shared_query(mpi_win, 0, &mpi_size, &disp_unit, &baseptr);
    }
-   double *arr = baseptr; std::cout << "line: 178" << std::endl;
+   double *arr = baseptr; // std::cout << "line: 178" << std::endl;
 
   if(use_helics){
     // if(localIndices.size() > 0 && network->getActiveBus(localIndices[0])){
-    for(int j = 0; j < outnodeIndexs.size(); j++){
-      // outnodeIndexs.push_back(std::make_pair(localIndices_[j][0], connectedBusIDs[j]));
-      std::cout << "line: 185 " << outnodeIndexs[j].first << "  " << outnodeIndexs[j].second << "me: " << me << std::endl;
-    }
+    // for(int j = 0; j < outnodeIndexs.size(); j++){
+    //   // outnodeIndexs.push_back(std::make_pair(localIndices_[j][0], connectedBusIDs[j]));
+    //   std::cout << "line: 185 " << outnodeIndexs[j].first << "  " << outnodeIndexs[j].second << "me: " << me << std::endl;
+    // }
     if(me == 0){
       // outnodeIndex = localIndices[0];
-      std::cout << "line: 187" << std::endl;
+      // std::cout << "line: 187" << std::endl;
       // for(int j = 0; j < connectedBusIDs.size(); j++){
       //   outnodeIndexs.push_back(localIndices_[j][0]);
       // }
@@ -443,7 +443,7 @@ if (debugoutput){
   double co_sim_time_interval = hadrec_app_sptr->getCosimTimeInterval(); // transfer data time step
   double co_sim_next_step_time = 0.0;
 
-  std::cout << "co_sim_time_interval: " << co_sim_time_interval << std::endl;
+  // std::cout << "co_sim_time_interval: " << co_sim_time_interval << std::endl;
 
   while(!hadrec_app_sptr->isDynSimuDone()){
   //   // if the dynamic simulation is not done (hit the end time)

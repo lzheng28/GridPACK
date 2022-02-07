@@ -51,7 +51,7 @@ int gridpack::hadrec::HADRECAppModule::isSecure(){
 }
 
 std::vector<int> gridpack::hadrec::HADRECAppModule::getHelicsConnectNodes(){
-    std::cout << "getHelicsConnectNodes " << std::endl;
+    // std::cout << "getHelicsConnectNodes " << std::endl;
     std::vector<int> connectedNodes;
     int connectedNode;
     gridpack::utility::Configuration::CursorPtr cursor;
@@ -59,9 +59,9 @@ std::vector<int> gridpack::hadrec::HADRECAppModule::getHelicsConnectNodes(){
     gridpack::utility::Configuration::ChildCursors Nodes;
     if (cursor) {
         cursor->children(Nodes);
-        std::cout << "cursor print" << std::endl;
+        // std::cout << "cursor print" << std::endl;
     }
-    std::cout << "Nodes.size(): " << Nodes.size() << std::endl;
+    // std::cout << "Nodes.size(): " << Nodes.size() << std::endl;
     for(int i = 0; i < Nodes.size(); i++){
         Nodes[i]->get("connectNode", &connectedNode);
         connectedNodes.push_back(connectedNode);
@@ -70,7 +70,7 @@ std::vector<int> gridpack::hadrec::HADRECAppModule::getHelicsConnectNodes(){
     // if(cursor){
     //     connectNode = cursor->get("connectNode", connectNode);
     // }
-    std::cout << "hadrec_app_module.cpp line:73 " << std::endl;
+    // std::cout << "hadrec_app_module.cpp line:73 " << std::endl;
     return connectedNodes;
 }
 
