@@ -30,6 +30,7 @@
 //#include "helics/ValueFederates.hpp"
 //#include <helics/shared_api_library/ValueFederate.h>
 #include <helics/helics.hpp>
+#include <helics/helics98.hpp>
 #endif
 
 const char* help = "HADREC Test application";
@@ -44,24 +45,201 @@ void printBus(boost::shared_ptr<gridpack::dynamic_simulation::DSFullNetwork> net
   }
 }
 
+bool HELICS_DEBUG = true;
+
+// helics value publication class
+class helics_value_pub{
+public:
+  std::string key;
+  std::string pubInfo;
+  helicscpp::Publication HelicsPublication;
+};
+
+// helics value subscription class
+class helics_value_sub{
+public:
+  std::string key;
+  std::string subInfo;
+  helicscpp::Input HelicsSubscription;
+};
+
+// clock class
+class helics_clock{
+public:
+  double initial_time;
+  double last_cosim_time;
+  double next_cosim_time;
+  double cosim_timestep;
+  void step_forward();
+};
+// forward one step
+void helics_clock::step_forward(){
+  last_cosim_time += cosim_timestep;
+  next_cosim_time += cosim_timestep;
+}
+
+// helics message class
+class helics_msg{
+public:
+  std::vector<helics_value_pub*> helics_value_pubs;
+  std::vector<helics_value_sub*> helics_value_subs;
+  std::shared_ptr<helicscpp::CombinationFederate> helics_fed;
+  helics_clock time;
+  std::string configFile;
+  int configure(std::string fileName);
+  int init();
+  void finalize();
+  void publishVariables(std::vector<std::complex<double>>& pubVector);
+  void subscribeVariables(std::vector<std::complex<double>>& subVector);
+  void clockupdate(double current_time);
+  int getPubCount();
+  int getSubCount();
+  void clockInit(double current_time, double helics_time_step);
+};
+
+int helics_msg::configure(std::string fileName){
+  int returnValue = 1;
+	if (fileName != "") {
+		configFile = fileName;
+	} else {
+		std::cout << "Helics configuration file doesn't exist, please check it!" << std::endl;
+		returnValue = 0;
+	}
+	return returnValue;
+}
+
+void helics_msg::finalize(){
+  if(HELICS_DEBUG)
+    std::cout << "helics_msg: Calling finalize\n" << std::endl;
+  const helics_federate_state fed_state = helics_fed->getCurrentMode();
+  if(fed_state != helics_state_finalize) {
+    helics_fed->finalize();
+  }
+  helicscpp::cleanupHelicsLibrary();
+}
+
+int helics_msg::init(){
+  if(helics_fed == NULL){
+    try {
+      helics_fed = std::make_shared<helicscpp::CombinationFederate>(configFile);
+      int pub_count = helics_fed->getPublicationCount();
+			int sub_count = helics_fed->getInputCount();
+      int idx = 0;
+      helics_value_pub *gpk_pub;
+			helics_value_sub *gpk_sub;
+      // pub of helics fed
+      for( idx = 0; idx < pub_count; idx++ ) {
+        helicscpp::Publication pub = helics_fed->getPublication(idx);
+        if( pub.isValid() ) {
+            gpk_pub = new helics_value_pub();
+            gpk_pub->key = std::string(pub.getKey());
+            gpk_pub->HelicsPublication = pub;
+            gpk_pub->pubInfo = std::string(pub.getInfo());
+            helics_value_pubs.push_back(gpk_pub);
+        }
+      }
+      // sub of helics fed
+      for( idx = 0; idx < sub_count; idx++ ) {
+        helicscpp::Input sub = helics_fed->getSubscription(idx);
+        if( sub.isValid() ) {
+            gpk_sub = new helics_value_sub();
+            gpk_sub->key = std::string(sub.getKey());
+            gpk_sub->HelicsSubscription = sub;
+            gpk_sub->subInfo = std::string(sub.getInfo());
+            helics_value_subs.push_back(gpk_sub);
+        }
+      }
+
+    } catch(const std::exception &e) {
+      std::cout << "helics_msg::init(): configuration file error!" << std::endl;
+    }
+  }
+  // TODO: pub type & sub type compare with complex data type
+
+  // enterInitializationState
+  helics_fed->enterInitializingMode();
+  // enterExecutionState
+  helics_fed->enterExecutingMode();
+  // atexit(finalize);
+  return 1;
+}
+
+void helics_msg::publishVariables(std::vector<std::complex<double>>& pubVector){
+  std::complex<double> complex_temp = {0.0, 0.0};
+  int idx = 0;
+  int pubCount  = helics_value_pubs.size();
+  if(pubVector.size() != pubCount){
+    std::cout << "Publication size doesn't match conneceted node size, please check it!" << std::endl;
+    return ;
+  }
+  for(idx = 0; idx < pubCount; idx++) {
+    double real_part = pubVector[idx].real();
+		double imag_part = pubVector[idx].imag();
+    complex_temp = {real_part, imag_part};
+    helics_value_pubs[idx]->HelicsPublication.publish(complex_temp);
+  }
+}
+
+void helics_msg::subscribeVariables(std::vector<std::complex<double>>& subVector){
+  std::complex<double> complex_temp = {0.0, 0.0};
+  int idx = 0;
+  int subCount  = helics_value_subs.size();
+  if(subVector.size() != subCount){
+    std::cout << "Subscription size doesn't match conneceted node size, please check it!" << std::endl;
+    return ;
+  }
+  for(idx = 0; idx < subCount; idx++) {
+    helicscpp::Input sub = helics_value_subs[idx]->HelicsSubscription;
+    if(sub.isUpdated()) {
+      complex_temp = sub.getComplex();
+      subVector[idx].real(complex_temp.real());
+      subVector[idx].imag(complex_temp.imag());
+    }
+  }
+}
+
+void helics_msg::clockupdate(double current_time){
+  double helics_t = 0;
+  if(current_time < time.next_cosim_time && current_time != 0){
+    return ;
+  }
+  double helics_requestTime = current_time;
+  double helics_grantime;
+  helics_grantime = helics_fed->requestTime(helics_requestTime);
+  if(HELICS_DEBUG)
+    std::cout << "helics_msg: Granted " << (double)helics_grantime << std::endl;
+  time.step_forward();
+}
+
+int helics_msg::getPubCount(){
+  return helics_value_pubs.size();
+}
+
+int helics_msg::getSubCount(){
+  return helics_value_subs.size();
+}
+
+void helics_msg::clockInit(double current_time, double helics_time_step){
+  time.initial_time = current_time;
+  time.last_cosim_time = -helics_time_step;
+  time.next_cosim_time = current_time;
+}
+
+
+/*****************************************************************************************/
+/************************************* hadrec.x main() ***********************************/
+/*****************************************************************************************/
 int main(int argc, char **argv)
 {
   // Initialize libraries (parallel and math)
   gridpack::NoPrint *noprint_ins = gridpack::NoPrint::instance();
-  //  noprint_ins->setStatus(true);
-
-  //bool bnoprint = gridpack::NoPrint::instance()->status();
-  //printf ("------------- hadrec_main function test 1  bnoprint: %d \n", bnoprint);
 
   gridpack::Environment env(argc,argv,help);
-  
+  // MPI communicator
   gridpack::parallel::Communicator world;
   int me = world.rank();
   int size = world.size();
-
-  //bnoprint = gridpack::NoPrint::instance()->status();
-  //printf ("------------- hadrec_main function test 2  bnoprint: %d \n", bnoprint);
-
+  // Timer for GridPACK
   gridpack::utility::CoarseTimer *timer =
     gridpack::utility::CoarseTimer::instance();
   int t_total = timer->createCategory("Dynamic Simulation: Total Application");
@@ -78,64 +256,47 @@ int main(int argc, char **argv)
   } else {
     file = "input.xml";
   }
-
-  //bnoprint = gridpack::NoPrint::instance()->status();
-  //printf ("------------- hadrec_main function test 3  bnoprint: %d \n", bnoprint);
-
+  // solve powerflow before DynamicSimualtion
   hadrec_app_sptr->solvePowerFlowBeforeDynSimu(const_cast<char *>(file.c_str()));
-
-  //hadrec_app_sptr->solvePowerFlowBeforeDynSimu(const_cast<char *>(file.c_str()));
 
   // transfer power flow results to dynamic simulation
   hadrec_app_sptr->transferPFtoDS();
-
+  // Declare BusFaults
   std::vector<gridpack::dynamic_simulation::Event> BusFaults;
   BusFaults.clear();
   
-  //printf ("------------- hadrec_main function before initializeDynSimu \n");
-
   // initialize dynamic simulation
   hadrec_app_sptr->initializeDynSimu(BusFaults);
 
-  int outnodeIndex = 1;
-
+  // <local index, original index> vector on each process 
   std::vector<std::pair<int, int>> outnodeIndexs;
-
+  // network on each process
   boost::shared_ptr<gridpack::dynamic_simulation::DSFullNetwork> network = hadrec_app_sptr->ds_network;
-
+  // dynamic simulation timestep
   double time_step = hadrec_app_sptr->getTimeStep();
-
+  // use helics status
   bool use_helics = false;
-
   use_helics = hadrec_app_sptr->useHelicsStatus();
 
-// #ifdef USE_HELICS
-// #if 0
-  //std::cout << "-------------!!!helics test: HELICS Version: " << helics::versionString << std::endl;
-  std::shared_ptr<helics::ValueFederate> fed;
-  helics::Publication pub;
-  helics::Input sub;
-  double helics_requestTime;
-  double helics_grantime;
+  // // helics federates shared pointer
+  // std::shared_ptr<helicscpp::CombinationFederate> fed;
+  // // helics publication
+  // helicscpp::Publication pub;
+  // // helics subscription
+  // helicscpp::Input sub;
+  // // send to helics broker to sync time
+  // double helics_requestTime;
+  // // helics broker return time
+  // double helics_grantime;
+  // complex number of subvalue
   std::complex<double> subvalue = {1.0, 1.0};
-  std::vector<std::complex<double>> subvalues;
+  // std::vector<std::complex<double>> subvalues;
   
   //to get publication definitions
   int pubCount;
   int subCount;
 
   int nBus = network->numBuses();
-  // int outnodeIndex = 2 - 1; //use node 118 to transfer data
-
-  // std::cout << "nBus:              " << nBus << std::endl;
-  // std::vector<int> localIndices;
-  // localIndices = network->getLocalBusIndices(504);
-
-  // int connectedBusID = hadrec_app_sptr->getHelicsConnectNode();
-  // std::vector<int> localIndices = network->getLocalBusIndices(connectedBusID);
-  // std::cout << "connectedBusID: " << connectedBusID << ", me" << std::endl;
-
-  // printBus(network, me);
 
   std::vector<int> connectedBusIDs = hadrec_app_sptr->getHelicsConnectNodes();
   std::vector<std::vector<int>> localIndices_;
@@ -150,9 +311,6 @@ int main(int argc, char **argv)
 
   std::cout << "localIndices_.size() = " << localIndices_.size() << ", me = " << me << std::endl;
 
-  // The size of each processor contains
-  // std::vector<int> local_size(size, 0);
-  // local_size[me] = localIndices_.size();
   int* sendcounts = (int*)malloc(sizeof(int) * size);
   sendcounts[me] = localIndices_.size(); //std::cout << "sendcounts.size() = " << sendcounts.size() << "  size = " << size << std::endl;
  
@@ -163,18 +321,6 @@ int main(int argc, char **argv)
   }
 
   std::complex<double>* recvbuf = (std::complex<double>*)malloc(sizeof(std::complex<double>) * sendcounts[me]);
-
-  // for(int ii = 0; ii < connectedBusIDs.size(); ii++){
-  //   std::cout << "connectedBusIDs: " << connectedBusIDs[ii] << std::endl;
-  // }
-
-  // for(int i = 0; i < localIndices.size(); i++){
-  //   if(network->getActiveBus(localIndices[i])){
-  //     std::cout << "Active Local indics, me: "<< localIndices[i] << " " << me << std::endl;
-  //   } else {
-  //     std::cout << "Inactivate Local indics, me: " << localIndices[i] << " " << me << std::endl;
-  //   }
-  // }
 
   MPI_Win mpi_win;
   MPI_Aint mpi_size;
@@ -192,57 +338,44 @@ int main(int argc, char **argv)
                               MPI_COMM_WORLD, &baseptr, &mpi_win);
       MPI_Win_shared_query(mpi_win, 0, &mpi_size, &disp_unit, &baseptr);
    }
-   double *arr = baseptr; // std::cout << "line: 178" << std::endl;
+   double *arr = baseptr;
 
+  helics_msg helicsMsg;
   if(use_helics){
-    // if(localIndices.size() > 0 && network->getActiveBus(localIndices[0])){
-    // for(int j = 0; j < outnodeIndexs.size(); j++){
-    //   // outnodeIndexs.push_back(std::make_pair(localIndices_[j][0], connectedBusIDs[j]));
-    //   std::cout << "line: 185 " << outnodeIndexs[j].first << "  " << outnodeIndexs[j].second << "me: " << me << std::endl;
-    // }
     if(me == 0){
-      // outnodeIndex = localIndices[0];
-      // std::cout << "line: 187" << std::endl;
-      // for(int j = 0; j < connectedBusIDs.size(); j++){
-      //   outnodeIndexs.push_back(localIndices_[j][0]);
-      // }
-
       std::cout << "-------------!!!helics test: HELICS Version: " << helics::versionString << std::endl;
       std::string configFile = hadrec_app_sptr->getHelicsConfigFile();
-      // string configFile = "/home/huan495/gridpack-dev/src/build/applications/dynamic_simulation_full_y/testcase/helics_39bus_3.json";
-      //   helics::ValueFederate fed(configFile);
-      // helics::Publication pub;
-      // helics::Input sub;
-      // double helics_requestTime = 0.0;
+
+      helicsMsg.configure(configFile);
+      helicsMsg.init();
       
       //to get publication definitions
-      fed = std::make_shared<helics::ValueFederate>(configFile);
-      pubCount = (*fed).getPublicationCount();
-      
+      // fed = std::make_shared<helics::ValueFederate>(configFile);
+      // pubCount = (*fed).getPublicationCount();
+
+      pubCount = helicsMsg.getPubCount();
       printf("-------------helics test: num of pub: %d \n", pubCount);
-      for(int j = 0; j < pubCount; j++) {
-        pub = (*fed).getPublication(j);
-        std::string pubInfo = pub.getInfo();
-        // do stuff to tie pub to GridPACK object property
-      }
+      // for(int j = 0; j < pubCount; j++) {
+      //   pub = (*fed).getPublication(j);
+      //   std::string pubInfo = pub.getInfo();
+      //   // do stuff to tie pub to GridPACK object property
+      // }
       
       //to get subscription definitions
-      subCount = (*fed).getInputCount();
+      // subCount = (*fed).getInputCount();
+      subCount = helicsMsg.getSubCount();
       printf("-------------helics test: num of sub: %d \n", subCount);
-      
-      for(int j = 0; j < subCount; j++) {
-        sub = (*fed).getInput(j);
-        std::string subInfo = sub.getInfo();
-        // do stuff to tie pub to GridPACK object property
-      }
+      // std::vector<std::complex<double>> subvalues(subCount);
+      // for(int j = 0; j < subCount; j++) {
+      //   sub = (*fed).getInput(j);
+      //   std::string subInfo = sub.getInfo();
+      //   // do stuff to tie pub to GridPACK object property
+      // }
 
-      //let helics broker know you are ready to start simulation 
-      (*fed).enterExecutingMode();
+      // //let helics broker know you are ready to start simulation 
+      // (*fed).enterExecutingMode();
     }
   }
-// #endif  //end if of HELICS
-
-  //printf ("------------- hadrec_main function after initializeDynSimu \n");
 
   bool debugoutput = false; // whether print out debug staffs
   bool boutputob = true;
@@ -258,62 +391,8 @@ int main(int argc, char **argv)
   }
 
   //-----test get load and get generator function-----------
-if (debugoutput){
-
-/*
-  busno = 5;
-  btmp = hadrec_app_sptr->getBusTotalLoadPower(busno, lp, lq);
-  if (me==0) printf("------------test hadrec_main, load at bus %d, has P: %f, Q: %f\n", busno, lp, lq);
-  busno = 7;
-  btmp = hadrec_app_sptr->getBusTotalLoadPower(busno, lp, lq);
-  if (me==0) printf("------------test hadrec_main, load at bus %d, has P: %f, Q: %f\n", busno, lp, lq);
-  busno = 9;
-  btmp = hadrec_app_sptr->getBusTotalLoadPower(busno, lp, lq);
-  if (me==0) printf("------------test hadrec_main, load at bus %d, has P: %f, Q: %f\n", busno, lp, lq);
-*/
-
-  busno = 36;
-  std::string genid = "1 ";
-  btmp = hadrec_app_sptr->getGeneratorPower(busno, genid, pg, qg);
-  if (me==0) printf("------------test hadrec_main, %d find generator at bus %d, has P: %f, Q: %f\n", btmp, busno, pg, qg);
-
-  busno = 36;
-  genid = "1";
-  btmp = hadrec_app_sptr->getGeneratorPower(busno, genid, pg, qg);
-  if (me==0) printf("------------test hadrec_main, %d find generator at bus %d, has P: %f, Q: %f\n", btmp, busno, pg, qg);
-
-}
-  // std::cout << "line: 263 " << std::endl;
-
-  gridpack::hadrec::HADRECAction loadshedact;
-  loadshedact.actiontype = 0;
-  loadshedact.bus_number = 5;
-  loadshedact.componentID = "1";
-  loadshedact.percentage = -0.2;
-
-  gridpack::hadrec::HADRECAction loadshedact1;
-  loadshedact1.actiontype = 0;
-  loadshedact1.bus_number = 7;
-  loadshedact1.componentID = "1";
-  loadshedact1.percentage = -0.2;
-
-  gridpack::hadrec::HADRECAction linetrip;
-  linetrip.actiontype = 1;
-  //linetrip.bus_number = 6;
-  linetrip.brch_from_bus_number = 6;
-  linetrip.brch_to_bus_number = 7;
-  linetrip.branch_ckt = "1 ";
-  
-  gridpack::hadrec::HADRECAction loadpchange;
-  loadpchange.actiontype = 3;
-  loadpchange.bus_number = 501;
-  loadpchange.percentage = 200.0;
-
-
   int isteps = 0;
-  bool bApplyAct_LoadShedding = false;  // whether apply the load shedding action in the simulation steps
-  bool bApplyAct_LineTripping = false;  // whether apply the line tripping action in the simulation steps
-  bool bApplyAct_LoadPchange = false;  // apply a sudden load P change, could mimic fault
+
   std::vector<double> ob_vals;
   int idxtmp;
 
@@ -326,109 +405,46 @@ if (debugoutput){
   hadrec_app_sptr->getObservationLists(obs_genBus, obs_genIDs,
       obs_loadBus, obs_loadIDs, obs_vBus);
 
-  if (boutputob && me == 0){
-    printf("-----------renke debug, getObservationLists------------\n");
-    
-    printf("-----------ob gen bus list, ");
-    for (idxtmp=0; idxtmp<obs_genBus.size(); idxtmp++){
-      printf(" %d, ", obs_genBus[idxtmp]);
-    }
-    printf(" \n");
-
-    printf("-----------ob gen ID list, ");
-    for (idxtmp=0; idxtmp<obs_genIDs.size(); idxtmp++){
-      printf(" %s, ", obs_genIDs[idxtmp].c_str());
-    }
-    printf(" \n");
-	
-	printf("-----------ob bus list, ");
-    for (idxtmp=0; idxtmp<obs_vBus.size(); idxtmp++){
-      printf(" %d, ", obs_vBus[idxtmp]);
-    }
-	printf(" \n");
-
-    printf("-----------ob load bus list, ");
-    for (idxtmp=0; idxtmp<obs_loadBus.size(); idxtmp++){
-      printf(" %d, ", obs_loadBus[idxtmp]);
-    }
-    printf(" \n");
-
-    printf("-----------ob load ID list, ");
-    for (idxtmp=0; idxtmp<obs_loadIDs.size(); idxtmp++){
-      printf(" %s, ", obs_loadIDs[idxtmp].c_str());
-    }
-
-    printf(" \n");
-  }
-
-  std::vector<int> zone_id;
   std::vector<double> tmp_p;
   std::vector<double> tmp_q;
 
   std::ofstream outFile;
-  if (debugoutput && me == 0){
-    // memset(buf,'\0',sizeof(buf));
-	hadrec_app_sptr->getZoneLoads(tmp_p, tmp_q, zone_id);
   
-    printf("\n-------------------get zone load information, total zones: %lu \n\n", zone_id.size());
-    for (idxtmp=0; idxtmp<zone_id.size(); idxtmp++){
-
-      printf(" zone number: %d, total load p: %f, total load q: %f,\n", zone_id[idxtmp], tmp_p[idxtmp], tmp_q[idxtmp]);
-
-    }
-  }
-  
-  if (debugoutput && me == 0){
-	hadrec_app_sptr->getZoneGeneratorPower(tmp_p, tmp_q, zone_id);
-  
-    printf("\n-------------------get zone generation information, total zones: %lu \n\n", zone_id.size());
-    for (idxtmp=0; idxtmp<zone_id.size(); idxtmp++){
-
-      printf(" zone number: %d, total generation p: %f, total generation q: %f,\n", zone_id[idxtmp], tmp_p[idxtmp], tmp_q[idxtmp]);
-
-    }
-  }
-
   char buf[1024];
   std::string outbuf;
+  // Output observation
   if (boutputob && me == 0) {  
     outFile.open(observationFileName, std::ios::out);
-
     sprintf(buf, "time,  ");
     outbuf += buf;
-	for (idxtmp=0; idxtmp<obs_genBus.size(); idxtmp++){
-      sprintf(buf, "gen-at-bus-%d-ID-%s-speed,  ", obs_genBus[idxtmp], obs_genIDs[idxtmp].c_str());
+    for (idxtmp=0; idxtmp<obs_genBus.size(); idxtmp++){
+        sprintf(buf, "gen-at-bus-%d-ID-%s-speed,  ", obs_genBus[idxtmp], obs_genIDs[idxtmp].c_str());
+        outbuf += buf;
+    }
+	
+    for (idxtmp=0; idxtmp<obs_genBus.size(); idxtmp++){
+        sprintf(buf, "gen-at-bus-%d-ID-%s-angle,  ", obs_genBus[idxtmp], obs_genIDs[idxtmp].c_str());
+        outbuf += buf;
+    }
+	
+	  for (idxtmp=0; idxtmp<obs_genBus.size(); idxtmp++){
+        sprintf(buf, "gen-at-bus-%d-ID-%s-P,  ", obs_genBus[idxtmp], obs_genIDs[idxtmp].c_str());
+        outbuf += buf;
+    }
+	
+	  for (idxtmp=0; idxtmp<obs_genBus.size(); idxtmp++){
+      sprintf(buf, "gen-at-bus-%d-ID-%s-Q,  ", obs_genBus[idxtmp], obs_genIDs[idxtmp].c_str());
       outbuf += buf;
-    }
-	
-	for (idxtmp=0; idxtmp<obs_genBus.size(); idxtmp++){
-      //printf("gen-at-bus-%d-ID-%s-speed,  ", obs_genBus[idxtmp], obs_genIDs[idxtmp].c_str());
-	  sprintf(buf, "gen-at-bus-%d-ID-%s-angle,  ", obs_genBus[idxtmp], obs_genIDs[idxtmp].c_str());
-    outbuf += buf;
-    }
-	
-	for (idxtmp=0; idxtmp<obs_genBus.size(); idxtmp++){
-
-	  sprintf(buf, "gen-at-bus-%d-ID-%s-P,  ", obs_genBus[idxtmp], obs_genIDs[idxtmp].c_str());
-    outbuf += buf;
-    }
-	
-	for (idxtmp=0; idxtmp<obs_genBus.size(); idxtmp++){
-
-	  sprintf(buf, "gen-at-bus-%d-ID-%s-Q,  ", obs_genBus[idxtmp], obs_genIDs[idxtmp].c_str());
-    outbuf += buf;
     }
 	
     for (idxtmp=0; idxtmp<obs_vBus.size(); idxtmp++){
       sprintf(buf, "bus-%d-magnitude, ", obs_vBus[idxtmp]);
       outbuf += buf;
-	  //printf("bus-%d-angle, ", obs_vBus[idxtmp]);
     }
 	
-	for (idxtmp=0; idxtmp<obs_vBus.size(); idxtmp++){
-      //printf("bus-%d-magnitude, ", obs_vBus[idxtmp]);
-	  sprintf(buf, "bus-%d-angle, ", obs_vBus[idxtmp]);
-    outbuf += buf;
+	  for (idxtmp=0; idxtmp<obs_vBus.size(); idxtmp++){
+      sprintf(buf, "bus-%d-angle, ", obs_vBus[idxtmp]);
+      outbuf += buf;
     }
 
     for (idxtmp=0; idxtmp<obs_loadBus.size(); idxtmp++){
@@ -439,37 +455,15 @@ if (debugoutput){
     outbuf += buf;
     outFile << outbuf;
   }
-// std::cout << "line: 406 " << std::endl;
   double co_sim_time_interval = hadrec_app_sptr->getCosimTimeInterval(); // transfer data time step
   double co_sim_next_step_time = 0.0;
 
   // std::cout << "co_sim_time_interval: " << co_sim_time_interval << std::endl;
 
   while(!hadrec_app_sptr->isDynSimuDone()){
-  //   // if the dynamic simulation is not done (hit the end time)
-  //   if ( bApplyAct_LoadShedding && (isteps == 2500 || isteps == 3000 ||
-  //         isteps == 3500 || isteps == 4000 ||
-  //         isteps == 4500 || isteps == 5000 || isteps == 5500 ) ){
-  //     //apply action
-  //     hadrec_app_sptr->applyAction(loadshedact);
-  //     hadrec_app_sptr->applyAction(loadshedact1);
-  //     //printf("----renke debug load shed, isteps: %d \n", isteps);
-  //   }
-	
-	// if ( bApplyAct_LoadPchange && isteps == 400){  // apply a load change with 1000 MW, mimic fault
-	// 	hadrec_app_sptr->applyAction(loadpchange);
-	// }
-
-  //   if ( bApplyAct_LineTripping && isteps == 400){
-  //     if (me == 0) printf("----renke debug line trip, isteps: %d \n", isteps);
-  //     hadrec_app_sptr->applyAction(linetrip);
-  //   }
     //execute one dynamic simulation step
     hadrec_app_sptr->executeDynSimuOneStep();
 
-// #ifdef USE_HELICS
-// #if 0
-// std::cout << "line: 431, me = " << me << std::endl;
     std::vector<int> buslist;
     std::vector<double> plist;
     std::vector<double> qlist;
@@ -478,9 +472,8 @@ if (debugoutput){
     
     if(use_helics && isteps * time_step == co_sim_next_step_time){
       co_sim_next_step_time += co_sim_time_interval;
-      // if(localIndices.size() > 0 && network->getActiveBus(localIndices[0])){
       int* grecvcounts = (int*)malloc(sizeof(int) * size);
-      grecvcounts[me] = outnodeIndexs.size() * 2; //std::cout << "line: 441, grecvcounts[me]: " << grecvcounts[me] << ", me: " << me << std::endl;
+      grecvcounts[me] = outnodeIndexs.size() * 2;
 
       arr[me] = outnodeIndexs.size() * 2;
       MPI_Barrier(MPI_COMM_WORLD);
@@ -489,14 +482,11 @@ if (debugoutput){
         grecvcounts[i] = arr[i];
       }
 
-      // grecvcounts[0] = 2;
-      // grecvcounts[1] = 0;
       int* gdispls = (int*)malloc(sizeof(int) * size);
       gdispls[0] = 0;
       for(int i = 1; i < size; i++){
         gdispls[i] = gdispls[i - 1] + grecvcounts[i - 1];
       }
-// std::cout << "line: 446, me = " << me << std::endl;
       double* gsendbuf = (double*)malloc(sizeof(double) * outnodeIndexs.size() * 2);
       double* grecvbuf;
 
@@ -516,29 +506,18 @@ if (debugoutput){
         gsendbuf[i] = outnodeIndexs[i / 2].second;
         gsendbuf[i + 1] = V * basevoltage * 1000;
       }
-// std::cout << "line: 465, me = " << me << std::endl;
       if(me == 0){
         grecvbuf = (double*)malloc(sizeof(double) * connectedBusIDs.size() * 10);
         for(int i = 0; i < 10; i++){
           grecvbuf[i] = 135000;
         }
       }
-// std::cout << "line: 469, me = " << me << ", connectedBusIDs.size() = " << connectedBusIDs.size() << std::endl;
-      // grecvcounts[0] = 2, grecvcounts[1] = 0;
-      // for(int i = 0; i < outnodeIndexs.size() * 2; i++){
-      //   std::cout << "gsendbuf: " << gsendbuf[i] << std::endl;
-      // }
-      // for(int i = 0; i < 2; i++){
-      //   std::cout << "grecvcounts: " << grecvcounts[i] << ", me = "<< me << std::endl;
-      // } //std::cout << "grecvbuf.size() = " << grecvbuf.size() << std::endl;
 
-      MPI_Gatherv(gsendbuf, grecvcounts[me], MPI_DOUBLE, grecvbuf, grecvcounts, gdispls, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-// std::cout << "line: 475, me = " << me << std::endl;      
+      MPI_Gatherv(gsendbuf, grecvcounts[me], MPI_DOUBLE, grecvbuf, grecvcounts, gdispls, MPI_DOUBLE, 0, MPI_COMM_WORLD);    
       if(me == 0){
         for(int k = 0; k < outnodeIndexs.size() * 2; k++){
           // std::cout << "grecvbuf: " << grecvbuf[k] << std::endl;
         }
-        //pub.publish(widearea_deltafreq);
         std::vector<double> voltage_v(pubCount, 0);
         for(int k = 0; k < pubCount; k++){
           for(int l = 0; l < pubCount * 2; l = l + 2){
@@ -549,94 +528,72 @@ if (debugoutput){
           }
         }
 
+        std::vector<std::complex<double>> pubValueVector(pubCount);
         for(int j = 0; j < pubCount; j++) {
-          pub = (*fed).getPublication(j);
-          // std::string pubInfo = pub.getInfo();
-          // //std::cout << "-------------!!!helics test: HELICS pub info: " << pubInfo << std::endl;
-          // // pub.publish(widearea_deltafreq);
-          // gridpack::dynamic_simulation::DSFullBus *bus = dynamic_cast<gridpack::dynamic_simulation::DSFullBus*>(network->getBus(outnodeIndexs[j]).get());
-
-          // gridpack::ComplexType voltage = network->getBus(outnodeIndexs[j])->getComplexVoltage();
-          // double rV = real(voltage);
-          // double iV = imag(voltage);
-          // double V = sqrt(rV*rV+iV*iV);
-          // double Ang = acos(rV/V);
-          // if (iV < 0) {
-          //   Ang = -Ang;
-          // }
-
-          // double basevoltage = hadrec_app_sptr->getBaseVoltage(outnodeIndexs[j]);
-          
-
+          // pub = (*fed).getPublication(j);
           std::complex<double> voltage_cosim {voltage_v[j], 0};
-          // std::complex<double> voltage_cosim{142300, 0};
-          // std::cout << "$$$$$voltage_cosim = " << voltage_cosim << std::endl;
-          // std::complex<double> pub_info = {};
-          pub.publish(voltage_cosim);
-          // do stuff to tie pub to GridPACK object property
+          pubValueVector[j] = voltage_cosim;
+          // pub.publish(voltage_cosim);
         }
+        helicsMsg.publishVariables(pubValueVector);
+        helicsMsg.clockupdate((double)(time_step * isteps));
 
-        helics_requestTime = (double)(time_step * isteps);
-        // printf("-------------!!!Helics request time: %f \n", helics_requestTime);
-        // std::cout << "isteps: " << isteps << "time_step: " << time_step << std::endl; 
-        //  double helics_grantime;
-        helics_grantime = (*fed).requestTime(helics_requestTime);
+        // helics_requestTime = (double)(time_step * isteps);
+        // helics_grantime = (*fed).requestTime(helics_requestTime);
         //  printf("-------------!!!Helics grant time: %12.6f \n", helics_grantime); 
         
-        // subvalue = 1.0;
-        
-        for(int j = 0; j < subCount; j++) {
-          sub = (*fed).getInput(j);
-          //printf("-------------!!!helics debug entering  sub loop\n"); 
-          //if(sub.isUpdated()) {
-          sub.getValue(subvalue);
-          // subvalue = (*fed).getDouble(sub);
-          // std::cout << "subvalue:" << subvalue << std::endl;
-            // printf("-------------!!!Helics sub value: %12.6f \n", subvalue);
-                                  //update GridPACK object property with value
-              //}
-          subvalues.push_back(subvalue);
+        // for(int j = 0; j < subCount; j++) {
+        //   sub = (*fed).getInput(j);
+        //   sub.getValue(subvalue);
+        //   subvalues.push_back(subvalue);
+        // }
+        std::vector<std::complex<double>> subValueVector(subCount);
+        helicsMsg.subscribeVariables(subValueVector);
+        for(int j = 0; j < subCount && HELICS_DEBUG; j++){
+          printf("-------------!!!Outside Helics def pub value: %12.6f + %12.6f i \n", pubValueVector[j].real(), pubValueVector[j].imag());
+          printf("-------------!!!Outside Helics def sub value: %12.6f + %12.6f i \n", subValueVector[j].real(), subValueVector[j].imag());
         }
-        //printf("-------------!!!Outside Helics def sub value: %12.6f \n", subvalue);
         arr[0] = subCount;
         for(int j = 1; j <= subCount; j++){
         double load_amplification_factor = hadrec_app_sptr->getLoadAmplifier();
 
         // gridpack::powerflow::PFBus *bus = dynamic_cast<gridpack::powerflow::PFBus*>(p_network->getBus(i).get());
-        ptmp = subvalues[j - 1].real() * load_amplification_factor / 1000000;
-        qtmp = subvalues[j - 1].imag() * load_amplification_factor / 1000000;
+        ptmp = subValueVector[j - 1].real() * load_amplification_factor / 1000000;
+        qtmp = subValueVector[j - 1].imag() * load_amplification_factor / 1000000;
 
         arr[j] = ptmp;
-        arr[j + subCount] = qtmp; //std::cout << "line: 477, ptmp, qtmp: " << ptmp << " " << qtmp << ", me: " << me << std::endl;
+        arr[j + subCount] = qtmp; std::cout << "line: 477, ptmp, qtmp: " << ptmp << " " << qtmp << ", me: " << me << std::endl;
         }
         
       }
-      // std::complex<double> *sendbuf = (std::complex<double>*)malloc(sizeof(std::complex<double>) * subvalues.size());
-      // sendbuf = subvalues.data();
 
       // MPI_Scatterv(sendbuf, sendcounts, displs, MPI_COMPLEX, recvbuf, sendcounts[me], MPI_COMPLEX, 0, MPI_COMM_WORLD);
 
       MPI_Barrier(MPI_COMM_WORLD);subCount = arr[0];
       for(int j = 1; j <= subCount; j++){
-      ptmp = arr[j];
-      qtmp = arr[j + subCount];
+        ptmp = arr[j];
+        qtmp = arr[j + subCount];
 
-      double ppu_tmp = ptmp/100.0;
-      double qpu_tmp = qtmp/100.0;
+        double ppu_tmp = ptmp/100.0;
+        double qpu_tmp = qtmp/100.0;
 
-      // std::cout << "line: 488, ppu_tmp, qpu_tmp: " << ppu_tmp << " " << qpu_tmp << ", me: " << me << std::endl;
+        // std::cout << "line: 488, ppu_tmp, qpu_tmp: " << ppu_tmp << " " << qpu_tmp << ", me: " << me << std::endl;
 
-      buslist.push_back(connectedBusIDs[j]);
-      plist.push_back(ppu_tmp);
-      qlist.push_back(qpu_tmp);
+        buslist.push_back(connectedBusIDs[j - 1]);
+        plist.push_back(ppu_tmp);
+        qlist.push_back(qpu_tmp);
       }
       //  the scatterInjectionLoad will change the loads at the buslist to be the values in the plist and qlist
       //  the value of load P and Q should be p.u., based on 100 MVA system base
+      for(int j = 0; j < buslist.size() && HELICS_DEBUG; j++){
+        std::cout << "plist[" << j << "] = " << plist[j] << std::endl;
+        std::cout << "qlist[" << j << "] = " << qlist[j] << std::endl;
+        std::cout << "buslist[" << j << "] = " << buslist[j] << std::endl;
+      }
       hadrec_app_sptr->scatterInjectionLoadNew(buslist, plist, qlist);
-      subvalues = {};
+      // subvalues = {};
     }
     
-// #endif  //end if of HELICS
     // Save observation file
     ob_vals.clear();
     ob_vals = hadrec_app_sptr->getObservations();
@@ -657,109 +614,22 @@ if (debugoutput){
   }
 
   outFile.close(); // close and save observation file
-// #ifdef USE_HELICS
-// #if 0
-  if(use_helics){
-    // if(localIndices.size() > 0 && network->getActiveBus(localIndices[0])){
-    if(me == 0){
-      (*fed).finalize();
-    }
-  }
-// #endif
-
-  if (me == 0) printf("\n----------------finished first round of dynamic simulation----\n ");
-  //timer->stop(t_total);
-  //timer->dump();
-
-
-  //start the reload and second time dynamic simulation here
-  // transfer power flow results to dynamic simulation
-  bool btest_2dynasimu = false;
-  if (btest_2dynasimu) {
-
-    gridpack::dynamic_simulation::Event busfault;
-    busfault.start = 1.0;
-    busfault.end = 1.2;
-    busfault.step = 0.005;
-    busfault.isBus = true;
-    busfault.bus_idx = 7;
-
-    BusFaults.clear();
-    BusFaults.push_back(busfault);
-
-    //hadrec_app_sptr->solvePowerFlowBeforeDynSimu(argc, argv);
-    //hadrec_app_sptr->solvePowerFlowBeforeDynSimu(const_cast<char *>(file.c_str()), 1);
-    hadrec_app_sptr->solvePowerFlowBeforeDynSimu(const_cast<char *>(file.c_str()), 0);
-
-    if (me == 0) printf("\n---------------renke debug, hadrec main, second dyn starts----------------\n");
-    hadrec_app_sptr->transferPFtoDS();
-
-    // initialize dynamic simulation
-    hadrec_app_sptr->initializeDynSimu(BusFaults);
-
-    busno = 5;
-    hadrec_app_sptr->getBusTotalLoadPower(busno, lp, lq);
-    if (me == 0) printf("------------test hadrec_main, load at bus %d, has P: %f, Q: %f\n", busno, lp, lq);
-    busno = 7;
-    hadrec_app_sptr->getBusTotalLoadPower(busno, lp, lq);
-    if (me == 0) printf("------------test hadrec_main, load at bus %d, has P: %f, Q: %f\n", busno, lp, lq);
-    busno = 9;
-    hadrec_app_sptr->getBusTotalLoadPower(busno, lp, lq);
-    if (me == 0) printf("------------test hadrec_main, load at bus %d, has P: %f, Q: %f\n", busno, lp, lq);
-
-    busno = 1;
-    std::string genid = "1";
-    btmp = hadrec_app_sptr->getGeneratorPower(busno, genid, pg, qg);
-    if (me == 0) printf("------------test hadrec_main, %d find generator at bus %d, has P: %f, Q: %f\n", btmp, busno, pg, qg);
-
-    busno = 2;
-    genid = "1";
-    btmp = hadrec_app_sptr->getGeneratorPower(busno, genid, pg, qg);
-    if (me == 0) printf("------------test hadrec_main, %d find generator at bus %d, has P: %f, Q: %f\n", btmp, busno, pg, qg);
-
-    busno = 3;
-    genid = "1";
-    btmp = hadrec_app_sptr->getGeneratorPower(busno, genid, pg, qg);
-    if (me == 0) printf("------------test hadrec_main, %d find generator at bus %d, has P: %f, Q: %f\n", btmp, busno, pg, qg);
-
-    isteps = 0;
-    //bApplyAct_LoadShedding = true;  // whether apply the action in the simulation steps
-
-    while(!hadrec_app_sptr->isDynSimuDone()){
-      // if the dynamic simulation is not done (hit the end time)
-      if ( bApplyAct_LoadShedding && (isteps == 2500 || isteps == 3000 ||
-            isteps == 3500 || isteps == 4000 ) ){
-        //apply action
-        hadrec_app_sptr->applyAction(loadshedact);
-        hadrec_app_sptr->applyAction(loadshedact1);
-        //printf("----renke debug load shed, isteps: %d \n", isteps);
-      }
-      //execute one dynamic simulation step
-      hadrec_app_sptr->executeDynSimuOneStep();
-
-      ob_vals.clear();
-      ob_vals = hadrec_app_sptr->getObservations();
-
-      if (debugoutput && me == 0){
-        printf("observations, ");
-        for (idxtmp=0; idxtmp<ob_vals.size(); idxtmp++) {
-          printf(" %16.12f, ", ob_vals[idxtmp]);
-        }
-        printf(" \n");
-      }
-
-      isteps++;
-    }
-  }
 
   if(me == 0){
-  if(hadrec_app_sptr->isSecure() == -1){
-    std::cout << "Power system is secure!" << std::endl;
-  } else {
-    std::cout << "Power system is not secure!" << std::endl;
+    if(use_helics){
+      // (*fed).finalize();
+      helicsMsg.finalize();
+    }
   }
 
-  printf(" ----------------- hadrec finished \n ");
+  // Print if the system is secure
+  if(me == 0){
+    if(hadrec_app_sptr->isSecure() == -1){
+      std::cout << "Power system is secure!" << std::endl;
+    } else {
+      std::cout << "Power system is not secure!" << std::endl;
+    }
+    printf(" ----------------- hadrec finished \n ");
   }
   // Make sure we could do it again with a new instance if we wanted to
   hadrec_app_sptr.reset(new gridpack::hadrec::HADRECAppModule());

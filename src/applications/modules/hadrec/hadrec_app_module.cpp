@@ -61,16 +61,13 @@ std::vector<int> gridpack::hadrec::HADRECAppModule::getHelicsConnectNodes(){
         cursor->children(Nodes);
         // std::cout << "cursor print" << std::endl;
     }
-    // std::cout << "Nodes.size(): " << Nodes.size() << std::endl;
+    std::cout << "Nodes.size(): " << Nodes.size() << std::endl;
     for(int i = 0; i < Nodes.size(); i++){
-        Nodes[i]->get("connectNode", &connectedNode);
+        if (!Nodes[i]->get("busID",&connectedNode)) continue;
+        Nodes[i]->get("busID", &connectedNode);
         connectedNodes.push_back(connectedNode);
+        std::cout << "connectedNode: " << connectedNode << std::endl;
     }
-    // int connectNode = 1;
-    // if(cursor){
-    //     connectNode = cursor->get("connectNode", connectNode);
-    // }
-    // std::cout << "hadrec_app_module.cpp line:73 " << std::endl;
     return connectedNodes;
 }
 
