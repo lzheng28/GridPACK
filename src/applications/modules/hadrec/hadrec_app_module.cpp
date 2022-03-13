@@ -61,12 +61,12 @@ std::vector<int> gridpack::hadrec::HADRECAppModule::getHelicsConnectNodes(){
         cursor->children(Nodes);
         // std::cout << "cursor print" << std::endl;
     }
-    std::cout << "Nodes.size(): " << Nodes.size() << std::endl;
+    // std::cout << "Nodes.size(): " << Nodes.size() << std::endl;
     for(int i = 0; i < Nodes.size(); i++){
-        if (!Nodes[i]->get("busID",&connectedNode)) continue;
-        Nodes[i]->get("busID", &connectedNode);
+        if (!Nodes[i]->get("connectNode",&connectedNode)) continue;
+        Nodes[i]->get("connectNode", &connectedNode);
         connectedNodes.push_back(connectedNode);
-        std::cout << "connectedNode: " << connectedNode << std::endl;
+        // std::cout << "connectedNode: " << connectedNode << std::endl;
     }
     return connectedNodes;
 }
@@ -149,7 +149,7 @@ std::string gridpack::hadrec::HADRECAppModule::getObservationFileName(){
         }
     }
     observefile_name = observefile_name.substr(0, i);
-    std::cout << "observefile_name = " << observefile_name << std::endl;
+    // std::cout << "observefile_name = " << observefile_name << std::endl;
     return observefile_name;
 }
 

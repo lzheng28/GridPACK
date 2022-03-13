@@ -45,7 +45,8 @@ void printBus(boost::shared_ptr<gridpack::dynamic_simulation::DSFullNetwork> net
   }
 }
 
-bool HELICS_DEBUG = true;
+bool HELICS_DEBUG = false;
+bool MPI_DEBUG = false;
 
 // helics value publication class
 class helics_value_pub{
@@ -194,6 +195,10 @@ void helics_msg::subscribeVariables(std::vector<std::complex<double>>& subVector
       complex_temp = sub.getComplex();
       subVector[idx].real(complex_temp.real());
       subVector[idx].imag(complex_temp.imag());
+    } else {
+      if(HELICS_DEBUG){
+        std::cout << "subvalue is not updated. Skip this step." << std::endl;
+      }
     }
   }
 }
@@ -221,10 +226,300 @@ int helics_msg::getSubCount(){
 
 void helics_msg::clockInit(double current_time, double helics_time_step){
   time.initial_time = current_time;
-  time.last_cosim_time = -helics_time_step;
-  time.next_cosim_time = current_time;
+  time.last_cosim_time = current_time;
+  time.next_cosim_time = current_time + helics_time_step;
 }
 
+// class mpi
+class mpi_msg{
+public:
+  int size;
+  int my_rank;
+  // read from xml input file
+  std::vector<int> origBusID;
+  std::vector<std::pair<int, int>> localAndOrigID;
+  std::vector<int> busCount;
+  std::vector<int> gatheredBusIDArray;
+  // Save voltage according to the origBusID sequence on each process
+  std::vector<std::complex<double>> voltageArray;
+  // Save voltage of all process on rank 0
+  std::vector<std::complex<double>> gatheredVoltageArray;
+  // Load on rank 0 and other loads
+  std::vector<std::complex<double>> loadArray;
+  // load on other rank
+  std::vector<std::complex<double>> scatteredLoadArray;
+  void init();
+  void gatherCount();
+  void bcastBusCount();
+  void gatherOrigID();
+  void gatherVoltage();
+  void scatterLoad();
+  void bcastLoad();
+};
+
+void mpi_msg::init(){
+  try{
+    MPI_Comm_size(MPI_COMM_WORLD, &size);
+    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+    // init voltageArray
+    voltageArray = std::vector<std::complex<double>> (localAndOrigID.size());
+    loadArray = std::vector<std::complex<double>> (origBusID.size());
+  } catch(const std::exception &e) {
+    std::cout << "mpi_msg::init(): initialization error!" << std::endl;
+  }
+}
+
+void mpi_msg::gatherCount(){
+  int sendbuf = localAndOrigID.size();
+  if(MPI_DEBUG){
+    std::cout << "Rank: " << my_rank << ", I have " << sendbuf << " connected buses." << std::endl;
+  }
+  int *recvbuf = new int[size]();
+  // Gather buses counts on each process
+  MPI_Gather(&sendbuf, 1, MPI_INT, recvbuf, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  if(MPI_DEBUG && my_rank == 0){
+    for(int i = 0; i < size; i++){
+      std::cout << "Rank 0: Rank " << i << ", has " << recvbuf[i] << " buses." << std::endl;
+    }
+  }
+  // Let other process get busCount
+  MPI_Bcast(recvbuf, size, MPI_INT, 0, MPI_COMM_WORLD);
+  // Save in busCount
+  busCount = std::vector<int>(size, 0);
+  for(int i = 0; i < size; i++){
+    busCount[i] = recvbuf[i];
+  }
+
+  // verify
+  if(MPI_DEBUG && my_rank == 0){
+    for(int i = 0; i < size; i++){
+      std::cout << "Rank " << i << ", has " << busCount[i] << " buses." << std::endl;
+    }
+  }
+  delete []recvbuf;
+}
+
+void mpi_msg::bcastBusCount(){
+  std::complex<double> *recvbuf = new std::complex<double>[origBusID.size()]();
+  if(my_rank == 0){
+    for(int i = 0; i < origBusID.size(); i++){
+      recvbuf[i] = loadArray[i];
+    }
+  }
+
+  // Let other process get loadArray
+  MPI_Bcast(recvbuf, origBusID.size(), MPI_DOUBLE_COMPLEX, 0, MPI_COMM_WORLD);
+  // Save in loadArray
+  if(my_rank != 0){
+    loadArray = std::vector<std::complex<double>> (origBusID.size());
+  }
+  for(int i = 0; i < origBusID.size(); i++){
+    loadArray[i] = recvbuf[i];
+  }
+
+  // verify
+  if(MPI_DEBUG){
+    for(int i = 0; i < origBusID.size(); i++){
+      std::cout << "Rank " << my_rank << ": loadArray[" << i << "] is " << loadArray[i] << " ." << std::endl;
+    }
+  }
+  delete []recvbuf;
+}
+
+void mpi_msg::gatherOrigID(){
+    if(MPI_DEBUG){
+      std::cout << "line: 331" << std::endl;
+    }
+    int* recvcounts = new int[size]();
+    for(int i = 0; i < size; i++){
+      recvcounts[i] = busCount[i];
+    }
+
+    int* displs = new int[size]();
+
+    int *sendbuf;
+    int *recvbuf;
+    recvbuf = new int[origBusID.size()]();
+    //recvbuf on process 0
+    if(my_rank == 0){
+        for(int i = 0; i < origBusID.size(); i++){
+            recvbuf[i] = -1;
+        }
+    }
+
+    sendbuf = new int[localAndOrigID.size()]();
+    for(int i = 0; i < localAndOrigID.size(); i++){
+        sendbuf[i] = localAndOrigID[i].second; // Get orignal busID on each process
+    }
+
+    for(int i = 1; i < size; i++){
+        displs[i] = displs[i - 1] + recvcounts[i - 1];
+    }
+
+    MPI_Gatherv(sendbuf, localAndOrigID.size(), MPI_INT, recvbuf, recvcounts, displs, MPI_INT, 0, MPI_COMM_WORLD);
+
+    // save busID on process 0
+    if(my_rank == 0){
+      gatheredBusIDArray = std::vector<int>(origBusID.size(), 0);
+      for(int i = 0; i < origBusID.size(); i++){
+        gatheredBusIDArray[i] = recvbuf[i];
+      }
+    }
+
+    if(MPI_DEBUG && my_rank == 0){
+        for(int i = 0; i < origBusID.size(); i++){
+            printf("%d\n", recvbuf[i]);
+        }
+        printf("\n");
+    }
+    delete []recvbuf;
+    delete []displs;
+    delete []recvcounts;
+    delete []sendbuf;
+    if(MPI_DEBUG){
+      std::cout << "gatherOrigID(), rank " << my_rank << std::endl;
+    }
+}
+
+// need to garther voltage on process 0 according to the origBusID sequence
+void mpi_msg::gatherVoltage(){
+    if(MPI_DEBUG){
+      std::cout << "line: 350" << std::endl;
+    }
+    int* recvcounts = new int[size]();
+    for(int i = 0; i < size; i++){
+      recvcounts[i] = busCount[i];
+    }
+
+    int* displs = new int[size]();
+
+    std::complex<double> *sendbuf;
+    std::complex<double> *recvbuf;
+    recvbuf = new std::complex<double>[origBusID.size()]();
+    //recvbuf on process 0
+    if(my_rank == 0){
+        // recvbuf = new std::complex<double>[origBusID.size()]();
+        for(int i = 0; i < origBusID.size(); i++){
+            recvbuf[i] = {-1.0, -1.0};
+        }
+    }
+
+    sendbuf = new std::complex<double>[localAndOrigID.size()]();
+    for(int i = 0; i < localAndOrigID.size(); i++){
+        sendbuf[i] = voltageArray[i];
+    }
+    displs[0] = 0;
+    for(int i = 1; i < size; i++){
+        displs[i] = displs[i - 1] + recvcounts[i - 1];
+    }
+
+    MPI_Gatherv(sendbuf, localAndOrigID.size(), MPI_DOUBLE_COMPLEX, recvbuf, recvcounts, displs, MPI_DOUBLE_COMPLEX, 0, MPI_COMM_WORLD);
+
+    if(MPI_DEBUG){
+      std::cout << "line: 382" << std::endl;
+    }
+
+    // sort the voltage according to origBusID sequence
+    // if(origBusID.size() != gatheredBusIDArray.size()){
+    //   std::cout << "mpi_msg ERROR: bus size error!" << std::endl;
+    // }
+    if(my_rank == 0){
+      gatheredVoltageArray = std::vector<std::complex<double>> (origBusID.size());
+      for(int i = 0; i < origBusID.size(); i++){
+        for(int j = 0; j < gatheredBusIDArray.size(); j++){
+          if(origBusID[i] == gatheredBusIDArray[j]){
+            gatheredVoltageArray[i] = recvbuf[j];
+            break;
+          }
+        }
+      }
+    }
+
+    if(MPI_DEBUG && my_rank == 0){
+        for(int i = 0; i < origBusID.size(); i++){
+            std::cout << "Voltage of bus: " << origBusID[i] << " is "<< gatheredVoltageArray[i] << std::endl;
+        }
+        printf("\n");
+    }
+    delete []recvbuf;
+    delete []displs;
+    delete []recvcounts;
+    delete []sendbuf;
+}
+
+void mpi_msg::scatterLoad(){
+    int *sendcounts = new int[size]();
+    int *displs = new int[size]();
+    std::complex<double> *sendbuf = new std::complex<double>[origBusID.size()]();
+
+    // sort sequence on rank 0
+    if(my_rank == 0){
+      for(int i = 0; i < origBusID.size(); i++){
+        for(int j = 0; j < origBusID.size(); j++){
+          if(gatheredBusIDArray[j] == origBusID[i]){
+            sendbuf[j] = loadArray[i];
+          }
+        }
+      }
+    }
+
+    std::complex<double> *recvbuf;
+    
+    for(int i = 0; i < size; i++){
+      sendcounts[i] = busCount[i];
+    }
+
+    recvbuf = new std::complex<double>[localAndOrigID.size()]();
+    for(int i = 1; i < size; i++){
+        displs[i] = displs[i - 1] + sendcounts[i - 1];
+    }
+
+    MPI_Scatterv(sendbuf, sendcounts, displs, MPI_DOUBLE_COMPLEX, recvbuf, sendcounts[my_rank], MPI_DOUBLE_COMPLEX, 0, MPI_COMM_WORLD);
+
+    scatteredLoadArray = std::vector<std::complex<double>> (localAndOrigID.size());
+    for(int i = 0; i < localAndOrigID.size(); i++){
+      scatteredLoadArray[i] = recvbuf[i];
+    }
+
+    if(MPI_DEBUG)
+      printf("%d: ", my_rank);
+    for(int i = 0; i < sendcounts[my_rank] && MPI_DEBUG; i++){
+        std::cout << recvbuf[i] << " " << std::endl;
+    }
+    if(MPI_DEBUG)
+      printf("\n");
+    delete []recvbuf;
+    delete []displs;
+    delete []sendcounts;
+    delete []sendbuf;
+}
+
+void mpi_msg::bcastLoad(){
+  std::complex<double> *recvbuf = new std::complex<double>[origBusID.size()]();
+  if(my_rank == 0){
+    for(int i = 0; i < origBusID.size(); i++){
+      recvbuf[i] = loadArray[i];
+    }
+  }
+
+  // Let other process get loadArray
+  MPI_Bcast(recvbuf, origBusID.size(), MPI_DOUBLE_COMPLEX, 0, MPI_COMM_WORLD);
+  // Save in loadArray
+  if(my_rank != 0){
+    loadArray = std::vector<std::complex<double>> (origBusID.size());
+  }
+  for(int i = 0; i < origBusID.size(); i++){
+    loadArray[i] = recvbuf[i];
+  }
+
+  // verify
+  if(MPI_DEBUG){
+    for(int i = 0; i < origBusID.size(); i++){
+      std::cout << "Rank " << my_rank << ": loadArray[" << i << "] is " << loadArray[i] << " ." << std::endl;
+    }
+  }
+  delete []recvbuf;
+}
 
 /*****************************************************************************************/
 /************************************* hadrec.x main() ***********************************/
@@ -304,41 +599,51 @@ int main(int argc, char **argv)
     std::vector<int> tmp = network->getLocalBusIndices(connectedBusIDs[i]);
     if(tmp.size() > 0 && network->getActiveBus(tmp[0])){
       localIndices_.push_back(tmp); //Get local indices of connected nodes
-      
+      // <local index, original index> vector on each process 
       outnodeIndexs.push_back(std::make_pair(localIndices_.back()[0], connectedBusIDs[i])); 
     }
   }
 
-  std::cout << "localIndices_.size() = " << localIndices_.size() << ", me = " << me << std::endl;
+  mpi_msg mpiMsg;
+  mpiMsg.origBusID = connectedBusIDs;
+  mpiMsg.localAndOrigID = outnodeIndexs;
+  if(MPI_DEBUG){
+    std::cout << "mpiMsg.localAndOrigID.size(): " << mpiMsg.localAndOrigID.size() << std::endl;
+  }
+  mpiMsg.init();
+  mpiMsg.gatherCount();
+  mpiMsg.gatherOrigID();
 
-  int* sendcounts = (int*)malloc(sizeof(int) * size);
-  sendcounts[me] = localIndices_.size(); //std::cout << "sendcounts.size() = " << sendcounts.size() << "  size = " << size << std::endl;
+  // std::cout << "localIndices_.size() = " << localIndices_.size() << ", me = " << me << std::endl;
+
+  // int* sendcounts = (int*)malloc(sizeof(int) * size);
+  // sendcounts[me] = localIndices_.size(); //std::cout << "sendcounts.size() = " << sendcounts.size() << "  size = " << size << std::endl;
  
   // The displs
-  int* displs = (int*)malloc(sizeof(int) * size);
-  for(int ii = 1; ii < size; ii++){
-    displs[ii] = displs[ii - 1] + sendcounts[ii - 1];
-  }
+  // int* displs = (int*)malloc(sizeof(int) * size);
+  // for(int ii = 1; ii < size; ii++){
+  //   displs[ii] = displs[ii - 1] + sendcounts[ii - 1];
+  // }
 
-  std::complex<double>* recvbuf = (std::complex<double>*)malloc(sizeof(std::complex<double>) * sendcounts[me]);
+  // std::complex<double>* recvbuf = (std::complex<double>*)malloc(sizeof(std::complex<double>) * sendcounts[me]);
 
-  MPI_Win mpi_win;
-  MPI_Aint mpi_size;
-  double *baseptr;
-  if (me == 0)
-   {
-      mpi_size = ARRAY_LEN * sizeof(double);
-      MPI_Win_allocate_shared(mpi_size, sizeof(double), MPI_INFO_NULL,
-                              MPI_COMM_WORLD, &baseptr, &mpi_win);
-   }
-   else
-   {
-      int disp_unit;
-      MPI_Win_allocate_shared(0, sizeof(double), MPI_INFO_NULL,
-                              MPI_COMM_WORLD, &baseptr, &mpi_win);
-      MPI_Win_shared_query(mpi_win, 0, &mpi_size, &disp_unit, &baseptr);
-   }
-   double *arr = baseptr;
+  // MPI_Win mpi_win;
+  // MPI_Aint mpi_size;
+  // double *baseptr;
+  // if (me == 0)
+  //  {
+  //     mpi_size = ARRAY_LEN * sizeof(double);
+  //     MPI_Win_allocate_shared(mpi_size, sizeof(double), MPI_INFO_NULL,
+  //                             MPI_COMM_WORLD, &baseptr, &mpi_win);
+  //  }
+  //  else
+  //  {
+  //     int disp_unit;
+  //     MPI_Win_allocate_shared(0, sizeof(double), MPI_INFO_NULL,
+  //                             MPI_COMM_WORLD, &baseptr, &mpi_win);
+  //     MPI_Win_shared_query(mpi_win, 0, &mpi_size, &disp_unit, &baseptr);
+  //  }
+  //  double *arr = baseptr;
 
   helics_msg helicsMsg;
   if(use_helics){
@@ -377,7 +682,7 @@ int main(int argc, char **argv)
     }
   }
 
-  bool debugoutput = false; // whether print out debug staffs
+  // bool debugoutput = false; // whether print out debug staffs
   bool boutputob = true;
   double lp, lq, pg, qg;
   int busno = 5;
@@ -456,13 +761,17 @@ int main(int argc, char **argv)
     outFile << outbuf;
   }
   double co_sim_time_interval = hadrec_app_sptr->getCosimTimeInterval(); // transfer data time step
-  double co_sim_next_step_time = 0.0;
+  // double co_sim_next_step_time = 0.0;
+  double co_sim_next_step_time = co_sim_time_interval;
+  helicsMsg.clockInit(0.0, co_sim_time_interval);
 
   // std::cout << "co_sim_time_interval: " << co_sim_time_interval << std::endl;
 
   while(!hadrec_app_sptr->isDynSimuDone()){
     //execute one dynamic simulation step
     hadrec_app_sptr->executeDynSimuOneStep();
+    
+    isteps++;
 
     std::vector<int> buslist;
     std::vector<double> plist;
@@ -472,28 +781,28 @@ int main(int argc, char **argv)
     
     if(use_helics && isteps * time_step == co_sim_next_step_time){
       co_sim_next_step_time += co_sim_time_interval;
-      int* grecvcounts = (int*)malloc(sizeof(int) * size);
-      grecvcounts[me] = outnodeIndexs.size() * 2;
+      // int* grecvcounts = (int*)malloc(sizeof(int) * size);
+      // grecvcounts[me] = outnodeIndexs.size() * 2;
 
-      arr[me] = outnodeIndexs.size() * 2;
-      MPI_Barrier(MPI_COMM_WORLD);
+      // arr[me] = outnodeIndexs.size() * 2;
+      // MPI_Barrier(MPI_COMM_WORLD);
 
-      for(int i = 0; i < size; i++){
-        grecvcounts[i] = arr[i];
-      }
+      // for(int i = 0; i < size; i++){
+      //   grecvcounts[i] = arr[i];
+      // }
 
-      int* gdispls = (int*)malloc(sizeof(int) * size);
-      gdispls[0] = 0;
-      for(int i = 1; i < size; i++){
-        gdispls[i] = gdispls[i - 1] + grecvcounts[i - 1];
-      }
-      double* gsendbuf = (double*)malloc(sizeof(double) * outnodeIndexs.size() * 2);
-      double* grecvbuf;
+      // int* gdispls = (int*)malloc(sizeof(int) * size);
+      // gdispls[0] = 0;
+      // for(int i = 1; i < size; i++){
+      //   gdispls[i] = gdispls[i - 1] + grecvcounts[i - 1];
+      // }
+      // double* gsendbuf = (double*)malloc(sizeof(double) * outnodeIndexs.size() * 2);
+      // double* grecvbuf;
 
-      for(int i = 0; i < outnodeIndexs.size() * 2; i = i + 2){
-        gridpack::dynamic_simulation::DSFullBus *bus = dynamic_cast<gridpack::dynamic_simulation::DSFullBus*>(network->getBus(outnodeIndexs[i / 2].first).get());
+      for(int i = 0; i < outnodeIndexs.size(); i++){
+        gridpack::dynamic_simulation::DSFullBus *bus = dynamic_cast<gridpack::dynamic_simulation::DSFullBus*>(network->getBus(outnodeIndexs[i].first).get());
 
-        gridpack::ComplexType voltage = network->getBus(outnodeIndexs[i / 2].first)->getComplexVoltage();
+        gridpack::ComplexType voltage = network->getBus(outnodeIndexs[i].first)->getComplexVoltage();
         double rV = real(voltage);
         double iV = imag(voltage);
         double V = sqrt(rV*rV+iV*iV);
@@ -502,37 +811,46 @@ int main(int argc, char **argv)
           Ang = -Ang;
         }
 
-        double basevoltage = hadrec_app_sptr->getBaseVoltage(outnodeIndexs[i / 2].first);
-        gsendbuf[i] = outnodeIndexs[i / 2].second;
-        gsendbuf[i + 1] = V * basevoltage * 1000;
-      }
-      if(me == 0){
-        grecvbuf = (double*)malloc(sizeof(double) * connectedBusIDs.size() * 10);
-        for(int i = 0; i < 10; i++){
-          grecvbuf[i] = 135000;
+        double basevoltage = hadrec_app_sptr->getBaseVoltage(outnodeIndexs[i].first);
+        // gsendbuf[i] = outnodeIndexs[i].second;
+        // gsendbuf[i + 1] = V * basevoltage * 1000;
+        if(MPI_DEBUG)
+          std::cout << "line: 763" << std::endl;
+        mpiMsg.voltageArray[i] = {V * basevoltage * 1000, Ang};
+        if(MPI_DEBUG){
+          std::cout << "mpiMsg.voltageArray[" << i << "]: " << mpiMsg.voltageArray[i] << "me: " << me << std::endl;
         }
       }
+      // if(me == 0){
+      //   grecvbuf = (double*)malloc(sizeof(double) * connectedBusIDs.size() * 10);
+      //   for(int i = 0; i < 10; i++){
+      //     grecvbuf[i] = 135000;
+      //   }
+      // }
 
-      MPI_Gatherv(gsendbuf, grecvcounts[me], MPI_DOUBLE, grecvbuf, grecvcounts, gdispls, MPI_DOUBLE, 0, MPI_COMM_WORLD);    
+      // MPI_Gatherv(gsendbuf, grecvcounts[me], MPI_DOUBLE, grecvbuf, grecvcounts, gdispls, MPI_DOUBLE, 0, MPI_COMM_WORLD);    
+      mpiMsg.gatherVoltage();
+
       if(me == 0){
-        for(int k = 0; k < outnodeIndexs.size() * 2; k++){
-          // std::cout << "grecvbuf: " << grecvbuf[k] << std::endl;
-        }
-        std::vector<double> voltage_v(pubCount, 0);
-        for(int k = 0; k < pubCount; k++){
-          for(int l = 0; l < pubCount * 2; l = l + 2){
-            if(round(grecvbuf[l]) == connectedBusIDs[k]){
-              voltage_v[k] = grecvbuf[l + 1];
-              break;
-            }
-          }
-        }
+        // for(int k = 0; k < outnodeIndexs.size() * 2; k++){
+        //   // std::cout << "grecvbuf: " << grecvbuf[k] << std::endl;
+        // }
+        // std::vector<double> voltage_v(pubCount, 0);
+        // for(int k = 0; k < pubCount; k++){
+        //   for(int l = 0; l < pubCount * 2; l = l + 2){
+        //     if(round(grecvbuf[l]) == connectedBusIDs[k]){
+        //       voltage_v[k] = grecvbuf[l + 1];
+        //       break;
+        //     }
+        //   }
+        // }
 
         std::vector<std::complex<double>> pubValueVector(pubCount);
         for(int j = 0; j < pubCount; j++) {
           // pub = (*fed).getPublication(j);
-          std::complex<double> voltage_cosim {voltage_v[j], 0};
-          pubValueVector[j] = voltage_cosim;
+          // std::complex<double> voltage_cosim {voltage_v[j], 0};
+          // pubValueVector[j] = voltage_cosim;
+          pubValueVector[j] = mpiMsg.gatheredVoltageArray[j];
           // pub.publish(voltage_cosim);
         }
         helicsMsg.publishVariables(pubValueVector);
@@ -553,33 +871,42 @@ int main(int argc, char **argv)
           printf("-------------!!!Outside Helics def pub value: %12.6f + %12.6f i \n", pubValueVector[j].real(), pubValueVector[j].imag());
           printf("-------------!!!Outside Helics def sub value: %12.6f + %12.6f i \n", subValueVector[j].real(), subValueVector[j].imag());
         }
-        arr[0] = subCount;
-        for(int j = 1; j <= subCount; j++){
-        double load_amplification_factor = hadrec_app_sptr->getLoadAmplifier();
+        // arr[0] = subCount;
+        for(int j = 0; j < subCount; j++){
+          double load_amplification_factor = hadrec_app_sptr->getLoadAmplifier();
 
-        // gridpack::powerflow::PFBus *bus = dynamic_cast<gridpack::powerflow::PFBus*>(p_network->getBus(i).get());
-        ptmp = subValueVector[j - 1].real() * load_amplification_factor / 1000000;
-        qtmp = subValueVector[j - 1].imag() * load_amplification_factor / 1000000;
+          // gridpack::powerflow::PFBus *bus = dynamic_cast<gridpack::powerflow::PFBus*>(p_network->getBus(i).get());
+          ptmp = subValueVector[j].real() * load_amplification_factor / 1000000;
+          qtmp = subValueVector[j].imag() * load_amplification_factor / 1000000;
 
-        arr[j] = ptmp;
-        arr[j + subCount] = qtmp; std::cout << "line: 477, ptmp, qtmp: " << ptmp << " " << qtmp << ", me: " << me << std::endl;
+          // arr[j] = ptmp;
+          // arr[j + subCount] = qtmp;
+          mpiMsg.loadArray[j] = {ptmp, qtmp};
+          if(MPI_DEBUG)
+            std::cout << "line: 477, ptmp, qtmp: " << ptmp << " " << qtmp << ", me: " << me << std::endl;
         }
         
       }
+      mpiMsg.scatterLoad();
+      mpiMsg.bcastLoad();
 
       // MPI_Scatterv(sendbuf, sendcounts, displs, MPI_COMPLEX, recvbuf, sendcounts[me], MPI_COMPLEX, 0, MPI_COMM_WORLD);
 
-      MPI_Barrier(MPI_COMM_WORLD);subCount = arr[0];
-      for(int j = 1; j <= subCount; j++){
-        ptmp = arr[j];
-        qtmp = arr[j + subCount];
+      // MPI_Barrier(MPI_COMM_WORLD);subCount = arr[0];
+      for(int j = 0; j < connectedBusIDs.size(); j++){
+        // ptmp = arr[j];
+        // qtmp = arr[j + subCount];
+
+        ptmp = mpiMsg.loadArray[j].real();
+        qtmp = mpiMsg.loadArray[j].imag();
 
         double ppu_tmp = ptmp/100.0;
         double qpu_tmp = qtmp/100.0;
 
-        // std::cout << "line: 488, ppu_tmp, qpu_tmp: " << ppu_tmp << " " << qpu_tmp << ", me: " << me << std::endl;
+        if(MPI_DEBUG)
+          std::cout << "line: 488, ppu_tmp, qpu_tmp, connected bus: " << ppu_tmp << " " << qpu_tmp << " " << connectedBusIDs[j] <<  ", me: " << me << std::endl;
 
-        buslist.push_back(connectedBusIDs[j - 1]);
+        buslist.push_back(connectedBusIDs[j]);
         plist.push_back(ppu_tmp);
         qlist.push_back(qpu_tmp);
       }
@@ -610,7 +937,6 @@ int main(int argc, char **argv)
     }
     outFile << outbuf;
 
-    isteps++;
   }
 
   outFile.close(); // close and save observation file
