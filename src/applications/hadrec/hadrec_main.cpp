@@ -458,6 +458,7 @@ void mpi_msg::scatterLoad(){
         for(int j = 0; j < origBusID.size(); j++){
           if(gatheredBusIDArray[j] == origBusID[i]){
             sendbuf[j] = loadArray[i];
+            break;
           }
         }
       }
@@ -481,10 +482,11 @@ void mpi_msg::scatterLoad(){
       scatteredLoadArray[i] = recvbuf[i];
     }
 
-    if(MPI_DEBUG)
+    if(MPI_DEBUG){
       printf("%d: ", my_rank);
-    for(int i = 0; i < sendcounts[my_rank] && MPI_DEBUG; i++){
-        std::cout << recvbuf[i] << " " << std::endl;
+      for(int i = 0; i < sendcounts[my_rank] && MPI_DEBUG; i++){
+          std::cout << recvbuf[i] << " " << std::endl;
+      }
     }
     if(MPI_DEBUG)
       printf("\n");
@@ -887,7 +889,7 @@ int main(int argc, char **argv)
         }
         
       }
-      mpiMsg.scatterLoad();
+      // mpiMsg.scatterLoad(); // TODO
       mpiMsg.bcastLoad();
 
       // MPI_Scatterv(sendbuf, sendcounts, displs, MPI_COMPLEX, recvbuf, sendcounts[me], MPI_COMPLEX, 0, MPI_COMM_WORLD);
